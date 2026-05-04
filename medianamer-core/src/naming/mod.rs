@@ -81,9 +81,8 @@ fn substitute(token: &str, v: &TokenValues) -> std::result::Result<String, Strin
 }
 
 fn sanitize(name: &str) -> String {
-    // Colon substitution first: "Top Gun: Maverick" → "Top Gun - Maverick".
-    // Bare colon (no trailing space) becomes a hyphen: "A:B" → "A-B".
-    let s = name.replace(": ", " - ").replace(':', "-");
+    // Direct colon → hyphen replacement: "Top Gun: Maverick" → "Top Gun- Maverick".
+    let s = name.replace(':', "-");
 
     // Strip characters illegal on FAT32 / NTFS / SMB shares.
     s.chars()
@@ -170,7 +169,7 @@ mod tests {
         let mut v = movie_values();
         v.title = Some("Top Gun: Maverick".to_string());
         let result = format_name("{title}.{ext}", &v).unwrap();
-        assert_eq!(result, "Top Gun - Maverick.mkv");
+        assert_eq!(result, "Top Gun- Maverick.mkv");
     }
 
     #[test]

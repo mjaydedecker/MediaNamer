@@ -31,7 +31,7 @@ impl Default for AppState {
             config,
             view: View::Main,
             drag_hover: false,
-            is_dark: dark_light::detect() == dark_light::Mode::Dark,
+            is_dark: crate::detect_is_dark(),
         }
     }
 }

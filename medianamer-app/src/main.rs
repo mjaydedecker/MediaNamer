@@ -23,6 +23,19 @@ fn theme(state: &AppState) -> Theme {
     if state.is_dark { Theme::Dark } else { Theme::Light }
 }
 
+// dark-light 1.1.1 falls back to the gtk-theme *name* for GNOME, which
+// doesn't reflect the modern color-scheme GSettings key used by Ubuntu 26.10.
+// Read the key directly; fall back to dark-light for non-GNOME desktops.
+fn detect_is_dark() -> bool {
+    std::process::Command::new("gsettings")
+        .args(["get", "org.gnome.desktop.interface", "color-scheme"])
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|s| s.contains("prefer-dark"))
+        .unwrap_or_else(|| detect_is_dark())
+}
+
 fn subscription(_state: &AppState) -> Subscription<Message> {
     Subscription::batch([
         event::listen_with(|event, _status, _id| match event {
@@ -259,7 +272,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::RefreshSystemTheme => {
-            state.is_dark = dark_light::detect() == dark_light::Mode::Dark;
+            state.is_dark = detect_is_dark();
             Task::none()
         }
         Message::RemoveFile(idx) => {
