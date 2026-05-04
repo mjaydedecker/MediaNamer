@@ -2,6 +2,7 @@ use strsim::jaro_winkler;
 
 pub const CONFIDENCE_THRESHOLD: f64 = 0.85;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct ParsedFilename {
     pub title_query: String,
     pub season: Option<u32>,
@@ -50,9 +51,13 @@ pub fn score(query: &str, candidate: &str) -> f64 {
     jaro_winkler(&query.to_lowercase(), &candidate.to_lowercase())
 }
 
+// Returns a byte offset of the SxxExx marker's start position. This is safe to use
+// as a str slice boundary because S/s is ASCII (single byte), which is always a
+// valid UTF-8 char boundary even in filenames with multi-byte characters before it.
 fn extract_season_episode(s: &str) -> (Option<u32>, Option<u32>, usize) {
     let bytes = s.as_bytes();
     let mut i = 0;
+    // Only SxxExx patterns are matched; bare Exx (no season) is not supported in v1.
     while i < bytes.len() {
         if (bytes[i] == b'S' || bytes[i] == b's') && i + 2 < bytes.len() && bytes[i + 1].is_ascii_digit() {
             let mut j = i + 1;
@@ -103,6 +108,7 @@ mod tests {
         let p = parse_filename("the_matrix_1999_bluray.mkv");
         assert_eq!(p.title_query, "the matrix");
         assert_eq!(p.season, None);
+        assert_eq!(p.episode, None);
     }
 
     #[test]
