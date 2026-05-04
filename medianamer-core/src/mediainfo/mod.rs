@@ -2,7 +2,7 @@ use serde::Deserialize;
 use std::path::Path;
 use crate::{Error, Result};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct MediaInfo {
     pub codec: String,
     pub resolution: String,
@@ -37,7 +37,13 @@ impl MediaInfo {
             .arg("--Output=JSON")
             .arg(path)
             .output()
-            .map_err(|e| Error::MediaInfoNotFound(e.to_string()))?;
+            .map_err(|e| {
+                if e.kind() == std::io::ErrorKind::NotFound {
+                    Error::MediaInfoNotFound(e.to_string())
+                } else {
+                    Error::Io(e)
+                }
+            })?;
 
         if !output.status.success() {
             return Err(Error::MediaInfo(
@@ -53,7 +59,7 @@ impl MediaInfo {
 
         let mut codec = "Unknown".to_string();
         let mut height: Option<u32> = None;
-        let mut extension = "mkv".to_string();
+        let mut extension = String::new();
 
         for track in &parsed.media.track {
             match track.track_type.as_str() {
