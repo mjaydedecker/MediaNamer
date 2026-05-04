@@ -17,7 +17,7 @@ pub enum Error {
     #[error("TOML parse error: {0}")]
     TomlDe(#[from] toml::de::Error),
 
-    #[error("TOML serialise error: {0}")]
+    #[error("TOML serialize error: {0}")]
     TomlSer(#[from] toml::ser::Error),
 
     #[error("HTTP error: {0}")]
