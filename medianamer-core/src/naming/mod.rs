@@ -81,8 +81,13 @@ fn substitute(token: &str, v: &TokenValues) -> std::result::Result<String, Strin
 }
 
 fn sanitize(name: &str) -> String {
-    name.chars()
-        .filter(|&c| c != '/' && c != '\0')
+    // Colon substitution first: "Top Gun: Maverick" → "Top Gun - Maverick".
+    // Bare colon (no trailing space) becomes a hyphen: "A:B" → "A-B".
+    let s = name.replace(": ", " - ").replace(':', "-");
+
+    // Strip characters illegal on FAT32 / NTFS / SMB shares.
+    s.chars()
+        .filter(|&c| !matches!(c, '/' | '\\' | '*' | '?' | '"' | '<' | '>' | '|' | '\0'))
         .collect::<String>()
         .trim_start_matches('.')
         .trim_end()
@@ -158,5 +163,35 @@ mod tests {
     fn strips_leading_dot() {
         let result = format_name(".{ext}", &movie_values()).unwrap();
         assert!(!result.starts_with('.'));
+    }
+
+    #[test]
+    fn sanitizes_colon_space_to_dash() {
+        let mut v = movie_values();
+        v.title = Some("Top Gun: Maverick".to_string());
+        let result = format_name("{title}.{ext}", &v).unwrap();
+        assert_eq!(result, "Top Gun - Maverick.mkv");
+    }
+
+    #[test]
+    fn sanitizes_bare_colon_to_dash() {
+        let mut v = movie_values();
+        v.title = Some("Mission:Impossible".to_string());
+        let result = format_name("{title}.{ext}", &v).unwrap();
+        assert_eq!(result, "Mission-Impossible.mkv");
+    }
+
+    #[test]
+    fn sanitizes_fat32_illegal_chars() {
+        let mut v = movie_values();
+        v.title = Some(r#"A? B* C" D<E>F|G\H"#.to_string());
+        let result = format_name("{title}.{ext}", &v).unwrap();
+        assert!(!result.contains('?'));
+        assert!(!result.contains('*'));
+        assert!(!result.contains('"'));
+        assert!(!result.contains('<'));
+        assert!(!result.contains('>'));
+        assert!(!result.contains('|'));
+        assert!(!result.contains('\\'));
     }
 }
