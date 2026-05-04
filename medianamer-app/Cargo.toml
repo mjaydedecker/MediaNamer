@@ -2,6 +2,8 @@
 name = "medianamer-app"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "Rename movie and TV episode files using TMDB metadata and MediaInfo"
 
 [[bin]]
 name = "medianamer"
