@@ -14,6 +14,7 @@ pub struct AppState {
     pub api_key_draft: String,
     pub movie_template_draft: String,
     pub tv_template_draft: String,
+    pub drag_hover: bool,
 }
 
 impl Default for AppState {
@@ -27,6 +28,7 @@ impl Default for AppState {
             tv_template_draft: config.templates.tv.clone(),
             config,
             view: View::Main,
+            drag_hover: false,
         }
     }
 }
@@ -81,7 +83,9 @@ pub enum View {
 
 #[derive(Debug, Clone)]
 pub enum Message {
+    OpenFilePicker,
     FilesDropped(Vec<PathBuf>),
+    DragHovered(bool),
     MediaInfoLoaded(usize, Result<MediaInfo, String>),
     MediaTypeChanged(MediaType),
     TemplateChanged(String),

@@ -18,12 +18,32 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
 }
 
 fn main_view(state: &AppState) -> Element<'_, Message> {
-    use iced::widget::{column, text};
+    use iced::widget::{column, container, text};
+    use iced::{Color, Length};
+
+    let drop_hint = if state.drag_hover {
+        container(text("Release to add files").size(13))
+            .style(|_theme| iced::widget::container::Style {
+                border: iced::Border {
+                    color: Color::from_rgb8(100, 180, 255),
+                    width: 2.0,
+                    radius: 4.0.into(),
+                },
+                ..Default::default()
+            })
+            .padding(6)
+            .width(Length::Fill)
+    } else {
+        container(text("Drop files here, or use + Add Files").size(12))
+            .padding(6)
+            .width(Length::Fill)
+    };
+
     column![
         toolbar::view(state),
         format_bar::view(state),
         file_list::view(state),
-        text("Drop files here to add").size(12),
+        drop_hint,
     ]
     .into()
 }

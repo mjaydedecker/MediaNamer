@@ -21,13 +21,41 @@ fn subscription(_state: &AppState) -> Subscription<Message> {
         Event::Window(window::Event::FileDropped(path)) => {
             Some(Message::FilesDropped(vec![path]))
         }
+        Event::Window(window::Event::FileHovered(_)) => Some(Message::DragHovered(true)),
+        Event::Window(window::Event::FilesHoveredLeft) => Some(Message::DragHovered(false)),
         _ => None,
     })
 }
 
 fn update(state: &mut AppState, message: Message) -> Task<Message> {
     match message {
+        Message::OpenFilePicker => Task::perform(
+            async {
+                rfd::AsyncFileDialog::new()
+                    .add_filter(
+                        "Video files",
+                        &["mkv", "mp4", "avi", "mov", "m4v", "wmv", "flv", "webm"],
+                    )
+                    .pick_files()
+                    .await
+                    .map(|handles| {
+                        handles
+                            .into_iter()
+                            .map(|h| h.path().to_path_buf())
+                            .collect::<Vec<_>>()
+                    })
+                    .unwrap_or_default()
+            },
+            Message::FilesDropped,
+        ),
+
+        Message::DragHovered(hovering) => {
+            state.drag_hover = hovering;
+            Task::none()
+        }
+
         Message::FilesDropped(paths) => {
+            state.drag_hover = false;
             let start_index = state.files.len();
             let mut tasks = vec![];
             for (i, path) in paths.into_iter().enumerate() {

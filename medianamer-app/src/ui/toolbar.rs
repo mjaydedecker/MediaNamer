@@ -7,7 +7,7 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
     let media_types = &[MediaType::Movie, MediaType::Tv];
 
     row![
-        button("+ Add Files").on_press(Message::FilesDropped(vec![])),
+        button("+ Add Files").on_press(Message::OpenFilePicker),
         button("Match All").on_press(Message::MatchAll),
         button("Rename").on_press_maybe(state.any_matched().then_some(Message::Rename)),
         Space::with_width(Length::Fill),

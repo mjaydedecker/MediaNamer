@@ -13,6 +13,7 @@ path = "src/main.rs"
 medianamer-core = { path = "../medianamer-core" }
 iced = { version = "0.13", features = ["tokio"] }
 tokio = { version = "1", features = ["full"] }
+rfd = { version = "0.14", features = ["xdg-portal"] }
 
 [package.metadata.deb]
 name = "medianamer"
