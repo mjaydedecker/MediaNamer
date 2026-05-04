@@ -107,6 +107,8 @@ pub enum Message {
     OpenHelp,
     CloseHelp,
     RefreshSystemTheme,
+    RemoveFile(usize),
+    ClearAll,
 }
 
 #[cfg(test)]

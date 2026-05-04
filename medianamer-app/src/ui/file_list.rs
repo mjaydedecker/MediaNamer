@@ -7,7 +7,8 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
     let header = row![
         text("Original Filename").width(Length::FillPortion(4)),
         text("New Filename").width(Length::FillPortion(4)),
-        text("Status").width(Length::FillPortion(1)),
+        text("Status").width(Length::FillPortion(2)),
+        text("").width(24), // remove button column
     ]
     .padding([4, 8])
     .spacing(8);
@@ -40,44 +41,52 @@ fn file_row<'a>(
         .unwrap_or("?")
         .to_string();
 
-    let (preview, status_text, status_color) = match &file.match_state {
+    let preview: String;
+    let status_widget: Element<'a, Message>;
+
+    match &file.match_state {
         MatchState::Pending | MatchState::Loading => {
-            ("…".to_string(), "Loading", Color::from_rgb8(180, 180, 180))
+            preview = "…".to_string();
+            status_widget = text("Loading").color(Color::from_rgb8(180, 180, 180)).size(12).into();
         }
         MatchState::Matched(m) => {
             let template = state.current_template();
-            let preview = if let Some(info) = &file.media_info {
+            preview = if let Some(info) = &file.media_info {
                 let values = TokenValues::from_match_and_info(m, info);
                 format_name(template, &values).unwrap_or_else(|e| e.to_string())
             } else {
                 "?".to_string()
             };
-            (preview, "✓", Color::from_rgb8(106, 191, 105))
+            status_widget = text("✓").color(Color::from_rgb8(106, 191, 105)).size(12).into();
         }
         MatchState::Ambiguous(_) => {
-            ("(click to resolve)".to_string(), "?", Color::from_rgb8(255, 167, 38))
+            preview = "—".to_string();
+            status_widget = button(text("Pick…").size(12))
+                .on_press(Message::ResolveAmbiguous(idx))
+                .into();
         }
         MatchState::Unmatched => {
-            ("(not matched)".to_string(), "✗", Color::from_rgb8(239, 83, 80))
+            preview = "—".to_string();
+            status_widget = text("✗ No match").color(Color::from_rgb8(239, 83, 80)).size(12).into();
         }
         MatchState::Error(e) => {
-            (format!("Error: {}", e), "⚠", Color::from_rgb8(239, 83, 80))
+            preview = format!("Error: {e}");
+            status_widget = text("⚠").color(Color::from_rgb8(239, 83, 80)).size(12).into();
         }
     };
 
-    let row_content = row![
-        text(original).width(Length::FillPortion(4)).size(12),
-        text(preview).width(Length::FillPortion(4)).size(12),
-        text(status_text).color(status_color).width(Length::FillPortion(1)).size(12),
-    ]
-    .spacing(8)
-    .padding([4, 8]);
-
-    if matches!(file.match_state, MatchState::Ambiguous(_)) {
-        button(row_content)
-            .on_press(Message::ResolveAmbiguous(idx))
-            .into()
-    } else {
-        container(row_content).into()
-    }
+    container(
+        row![
+            text(original).width(Length::FillPortion(4)).size(12),
+            text(preview).width(Length::FillPortion(4)).size(12),
+            container(status_widget).width(Length::FillPortion(2)),
+            button(text("✕").size(11))
+                .on_press(Message::RemoveFile(idx))
+                .width(24),
+        ]
+        .spacing(8)
+        .padding([4, 8])
+        .align_y(iced::Alignment::Center),
+    )
+    .into()
 }

@@ -6,9 +6,12 @@ use medianamer_core::sources::MediaType;
 pub fn view(state: &AppState) -> Element<'_, Message> {
     let media_types = &[MediaType::Movie, MediaType::Tv];
 
+    let has_files = !state.files.is_empty();
+
     row![
         button("+ Add Files").on_press(Message::OpenFilePicker),
-        button("Match All").on_press(Message::MatchAll),
+        button("Match All").on_press_maybe(has_files.then_some(Message::MatchAll)),
+        button("Clear All").on_press_maybe(has_files.then_some(Message::ClearAll)),
         button("Rename").on_press_maybe(state.any_matched().then_some(Message::Rename)),
         Space::with_width(Length::Fill),
         pick_list(media_types.as_ref(), Some(&state.media_type), Message::MediaTypeChanged),

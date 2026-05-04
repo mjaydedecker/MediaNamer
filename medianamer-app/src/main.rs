@@ -262,5 +262,15 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.is_dark = dark_light::detect() == dark_light::Mode::Dark;
             Task::none()
         }
+        Message::RemoveFile(idx) => {
+            if idx < state.files.len() {
+                state.files.remove(idx);
+            }
+            Task::none()
+        }
+        Message::ClearAll => {
+            state.files.clear();
+            Task::none()
+        }
     }
 }

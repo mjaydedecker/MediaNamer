@@ -14,10 +14,13 @@ pub fn parse_filename(filename: &str) -> ParsedFilename {
     let (season, episode, se_end) = extract_season_episode(stem);
     let pre_se = &stem[..se_end];
 
-    // Split on scene release separators and stop at the first year token.
-    // This reliably separates the title from technical tags (codec, resolution,
-    // audio, release group) without needing an ever-growing noise list.
-    let title_tokens: Vec<&str> = pre_se
+    // Strip parentheses so "(2006)" becomes "2006" and is recognised as the year
+    // boundary. This handles both scene releases (bare year) and our own output
+    // format where year, resolution and codec are wrapped in parens.
+    let normalized = pre_se.replace(['(', ')'], " ");
+
+    // Split on common separators and stop at the first year token.
+    let title_tokens: Vec<&str> = normalized
         .split(['.', '_', '-', ' '])
         .filter(|t| !t.is_empty())
         .take_while(|t| !is_year(t))
@@ -133,6 +136,19 @@ mod tests {
     #[test]
     fn low_confidence_below_threshold() {
         assert!(score("bbc shakespeare", "Shakespeare Uncovered") < CONFIDENCE_THRESHOLD);
+    }
+
+    #[test]
+    fn parses_own_output_format() {
+        // Files already renamed by MediaNamer — year is in parens
+        let p = parse_filename("Mission: Impossible III (2006) (1080p) (AV1).mkv");
+        assert_eq!(p.title_query, "mission: impossible iii");
+
+        let p = parse_filename("Top Gun: Maverick (2022) (1080p) (AV1).mkv");
+        assert_eq!(p.title_query, "top gun: maverick");
+
+        let p = parse_filename("Transformers: Rise of the Beasts (2023) (1080p) (AV1)");
+        assert_eq!(p.title_query, "transformers: rise of the beasts");
     }
 
     #[test]
