@@ -1,5 +1,7 @@
-use iced::{application, event, window, Event, Subscription, Task};
+use iced::{application, event, time, window, Event, Subscription, Task, Theme};
+use std::time::Duration;
 use state::{AppState, Message, MatchState, View};
+use dark_light;
 use medianamer_core::{
     matcher::{parse_filename, score, CONFIDENCE_THRESHOLD},
     mediainfo::MediaInfo,
@@ -12,19 +14,27 @@ mod ui;
 
 fn main() -> iced::Result {
     application("MediaNamer", update, ui::view)
+        .theme(theme)
         .subscription(subscription)
         .run_with(|| (AppState::default(), Task::none()))
 }
 
+fn theme(state: &AppState) -> Theme {
+    if state.is_dark { Theme::Dark } else { Theme::Light }
+}
+
 fn subscription(_state: &AppState) -> Subscription<Message> {
-    event::listen_with(|event, _status, _id| match event {
-        Event::Window(window::Event::FileDropped(path)) => {
-            Some(Message::FilesDropped(vec![path]))
-        }
-        Event::Window(window::Event::FileHovered(_)) => Some(Message::DragHovered(true)),
-        Event::Window(window::Event::FilesHoveredLeft) => Some(Message::DragHovered(false)),
-        _ => None,
-    })
+    Subscription::batch([
+        event::listen_with(|event, _status, _id| match event {
+            Event::Window(window::Event::FileDropped(path)) => {
+                Some(Message::FilesDropped(vec![path]))
+            }
+            Event::Window(window::Event::FileHovered(_)) => Some(Message::DragHovered(true)),
+            Event::Window(window::Event::FilesHoveredLeft) => Some(Message::DragHovered(false)),
+            _ => None,
+        }),
+        time::every(Duration::from_secs(3)).map(|_| Message::RefreshSystemTheme),
+    ])
 }
 
 fn update(state: &mut AppState, message: Message) -> Task<Message> {
@@ -246,6 +256,10 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         Message::CloseHelp => {
             state.view = View::Main;
+            Task::none()
+        }
+        Message::RefreshSystemTheme => {
+            state.is_dark = dark_light::detect() == dark_light::Mode::Dark;
             Task::none()
         }
     }

@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use dark_light;
 use medianamer_core::{
     config::Config,
     mediainfo::MediaInfo,
@@ -15,6 +16,7 @@ pub struct AppState {
     pub movie_template_draft: String,
     pub tv_template_draft: String,
     pub drag_hover: bool,
+    pub is_dark: bool,
 }
 
 impl Default for AppState {
@@ -29,6 +31,7 @@ impl Default for AppState {
             config,
             view: View::Main,
             drag_hover: false,
+            is_dark: dark_light::detect() == dark_light::Mode::Dark,
         }
     }
 }
@@ -103,6 +106,7 @@ pub enum Message {
     SaveSettings,
     OpenHelp,
     CloseHelp,
+    RefreshSystemTheme,
 }
 
 #[cfg(test)]
