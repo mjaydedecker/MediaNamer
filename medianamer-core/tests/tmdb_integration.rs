@@ -24,7 +24,7 @@ async fn search_movie_returns_match() {
 
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].display_title(), "Fire on the Amazon");
-    assert!(matches!(&results[0].kind, MatchKind::Movie { year: 1993, .. }));
+    assert!(matches!(&results[0].kind, MatchKind::Movie { year: Some(1993), .. }));
 }
 
 #[tokio::test]
@@ -58,9 +58,9 @@ async fn search_tv_fetches_episode_detail() {
 
     assert_eq!(results.len(), 1);
     if let MatchKind::TvEpisode { episode_title, season, episode, .. } = &results[0].kind {
-        assert_eq!(episode_title, "A Midsummer Night's Dream");
-        assert_eq!(season, &4);
-        assert_eq!(episode, &3);
+        assert_eq!(episode_title, &Some("A Midsummer Night's Dream".to_string()));
+        assert_eq!(season, &Some(4));
+        assert_eq!(episode, &Some(3));
     } else {
         panic!("expected TvEpisode");
     }

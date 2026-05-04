@@ -58,11 +58,10 @@ struct EpisodeDetail {
     episode_number: u32,
 }
 
-fn year_from_date(date: &Option<String>) -> u32 {
+fn year_from_date(date: &Option<String>) -> Option<u32> {
     date.as_deref()
         .and_then(|d| d.split('-').next())
         .and_then(|y| y.parse().ok())
-        .unwrap_or(0)
 }
 
 #[async_trait]
@@ -137,9 +136,9 @@ impl MediaSource for TmdbSource {
                 tmdb_id: series.id,
                 kind: MatchKind::TvEpisode {
                     series_title: series.name.clone(),
-                    season: ep.season_number,
-                    episode: ep.episode_number,
-                    episode_title: ep.name,
+                    season: Some(ep.season_number),
+                    episode: Some(ep.episode_number),
+                    episode_title: Some(ep.name),
                 },
             }]);
         }
@@ -148,9 +147,9 @@ impl MediaSource for TmdbSource {
             tmdb_id: r.id,
             kind: MatchKind::TvEpisode {
                 series_title: r.name,
-                season: 0,
-                episode: 0,
-                episode_title: String::new(),
+                season: None,
+                episode: None,
+                episode_title: None,
             },
         }).collect())
     }

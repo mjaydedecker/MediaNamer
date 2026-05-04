@@ -20,13 +20,13 @@ impl std::fmt::Display for MediaType {
 pub enum MatchKind {
     Movie {
         title: String,
-        year: u32,
+        year: Option<u32>,
     },
     TvEpisode {
         series_title: String,
-        season: u32,
-        episode: u32,
-        episode_title: String,
+        season: Option<u32>,
+        episode: Option<u32>,
+        episode_title: Option<String>,
     },
 }
 
@@ -46,7 +46,7 @@ impl MediaMatch {
 
     pub fn year(&self) -> Option<u32> {
         match &self.kind {
-            MatchKind::Movie { year, .. } => Some(*year),
+            MatchKind::Movie { year, .. } => *year,
             MatchKind::TvEpisode { .. } => None,
         }
     }
@@ -74,7 +74,7 @@ mod tests {
     fn movie_display_title() {
         let m = MediaMatch {
             tmdb_id: 1,
-            kind: MatchKind::Movie { title: "The Matrix".to_string(), year: 1999 },
+            kind: MatchKind::Movie { title: "The Matrix".to_string(), year: Some(1999) },
         };
         assert_eq!(m.display_title(), "The Matrix");
     }
@@ -85,9 +85,9 @@ mod tests {
             tmdb_id: 2,
             kind: MatchKind::TvEpisode {
                 series_title: "Breaking Bad".to_string(),
-                season: 1,
-                episode: 1,
-                episode_title: "Pilot".to_string(),
+                season: Some(1),
+                episode: Some(1),
+                episode_title: Some("Pilot".to_string()),
             },
         };
         assert_eq!(m.display_title(), "Breaking Bad");
