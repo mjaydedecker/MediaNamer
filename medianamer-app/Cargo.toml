@@ -11,3 +11,32 @@ path = "src/main.rs"
 medianamer-core = { path = "../medianamer-core" }
 iced = { version = "0.13", features = ["tokio"] }
 tokio = { version = "1", features = ["full"] }
+
+[package.metadata.deb]
+name = "medianamer"
+maintainer = "MediaNamer Contributors"
+copyright = "2026"
+extended-description = "Rename movie and TV episode files using TMDB metadata and MediaInfo."
+depends = "mediainfo"
+section = "utils"
+priority = "optional"
+assets = [
+    ["target/release/medianamer", "usr/bin/", "755"],
+    ["assets/medianamer.desktop", "usr/share/applications/", "644"],
+    ["assets/icon.png", "usr/share/icons/hicolor/512x512/apps/medianamer.png", "644"],
+]
+
+[[package.metadata.generate-rpm.assets]]
+source = "target/release/medianamer"
+dest = "/usr/bin/medianamer"
+mode = "0755"
+
+[[package.metadata.generate-rpm.assets]]
+source = "medianamer-app/assets/medianamer.desktop"
+dest = "/usr/share/applications/medianamer.desktop"
+mode = "0644"
+
+[[package.metadata.generate-rpm.assets]]
+source = "medianamer-app/assets/icon.png"
+dest = "/usr/share/icons/hicolor/512x512/apps/medianamer.png"
+mode = "0644"

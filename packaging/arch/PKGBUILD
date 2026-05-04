@@ -1,0 +1,25 @@
+pkgname=medianamer
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Rename movie and TV episode files using TMDB metadata"
+arch=('x86_64')
+url="https://github.com/youruser/medianamer"
+license=('MIT')
+depends=('mediainfo')
+makedepends=('rust' 'cargo')
+source=("$pkgname-$pkgver.tar.gz::https://github.com/youruser/$pkgname/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "$pkgname-$pkgver"
+    cargo build --release -p medianamer-app
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+    install -Dm755 "target/release/medianamer" "$pkgdir/usr/bin/medianamer"
+    install -Dm644 "medianamer-app/assets/medianamer.desktop" \
+        "$pkgdir/usr/share/applications/medianamer.desktop"
+    install -Dm644 "medianamer-app/assets/icon.png" \
+        "$pkgdir/usr/share/icons/hicolor/512x512/apps/medianamer.png"
+}
