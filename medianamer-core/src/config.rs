@@ -4,7 +4,7 @@ use crate::Result;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
-    pub tmdb_api_key: String,
+    pub tmdb_read_access_token: String,
     pub templates: Templates,
 }
 
@@ -17,7 +17,7 @@ pub struct Templates {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            tmdb_api_key: String::new(),
+            tmdb_read_access_token: String::new(),
             templates: Templates {
                 movie: "{title} ({year}) ({resolution}) ({codec})".to_string(),
                 tv: "{series} - S{season:02}E{episode:02} - {title} ({codec})".to_string(),
@@ -67,7 +67,7 @@ mod tests {
     #[test]
     fn round_trip_toml() {
         let c = Config {
-            tmdb_api_key: "testkey".to_string(),
+            tmdb_read_access_token: "testkey".to_string(),
             templates: Templates {
                 movie: "{title} ({year})".to_string(),
                 tv: "{series} S{season:02}E{episode:02}".to_string(),
@@ -75,7 +75,7 @@ mod tests {
         };
         let toml_str = toml::to_string_pretty(&c).unwrap();
         let back: Config = toml::from_str(&toml_str).unwrap();
-        assert_eq!(back.tmdb_api_key, "testkey");
+        assert_eq!(back.tmdb_read_access_token, "testkey");
         assert_eq!(back.templates.movie, "{title} ({year})");
     }
 }

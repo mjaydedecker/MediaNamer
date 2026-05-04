@@ -34,7 +34,7 @@ fn main_view(state: &AppState) -> Element<'_, Message> {
             .padding(6)
             .width(Length::Fill)
     } else {
-        container(text("Drop files here, or use + Add Files").size(12))
+        container(text("Use + Add Files to browse, or drag and drop (X11/XWayland only)").size(12))
             .padding(6)
             .width(Length::Fill)
     };

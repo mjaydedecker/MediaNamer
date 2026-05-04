@@ -102,7 +102,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
 
         Message::MatchAll => {
-            let api_key = state.config.tmdb_api_key.clone();
+            let api_key = state.config.tmdb_read_access_token.clone();
             let media_type = state.media_type.clone();
             let mut tasks = vec![];
 
@@ -221,7 +221,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::ApiKeyChanged(k) => {
-            state.api_key_draft = k;
+            state.access_token_draft = k;
             Task::none()
         }
         Message::MovieTemplateChanged(t) => {
@@ -233,7 +233,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::SaveSettings => {
-            state.config.tmdb_api_key = state.api_key_draft.clone();
+            state.config.tmdb_read_access_token = state.access_token_draft.clone();
             state.config.templates.movie = state.movie_template_draft.clone();
             state.config.templates.tv = state.tv_template_draft.clone();
             let _ = state.config.save();

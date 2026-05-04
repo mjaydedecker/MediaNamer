@@ -11,7 +11,7 @@ pub struct AppState {
     pub files: Vec<MediaFile>,
     pub config: Config,
     pub view: View,
-    pub api_key_draft: String,
+    pub access_token_draft: String,
     pub movie_template_draft: String,
     pub tv_template_draft: String,
     pub drag_hover: bool,
@@ -23,7 +23,7 @@ impl Default for AppState {
         Self {
             media_type: MediaType::Movie,
             files: vec![],
-            api_key_draft: config.tmdb_api_key.clone(),
+            access_token_draft: config.tmdb_read_access_token.clone(),
             movie_template_draft: config.templates.movie.clone(),
             tv_template_draft: config.templates.tv.clone(),
             config,

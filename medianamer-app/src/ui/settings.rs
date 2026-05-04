@@ -6,8 +6,8 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
     column![
         text("Settings").size(18),
         row![
-            text("TMDB API Key").width(160),
-            text_input("Paste your TMDB API key here", &state.api_key_draft)
+            text("TMDB Read Access Token").width(200),
+            text_input("Paste your TMDB Read Access Token (eyJ...)", &state.access_token_draft)
                 .on_input(Message::ApiKeyChanged)
                 .padding(4),
         ]
