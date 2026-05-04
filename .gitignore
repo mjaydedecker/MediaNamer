@@ -2,3 +2,7 @@
 .env
 *.deb
 *.rpm
+**/*.rs.bk
+.idea/
+.vscode/
+.superpowers/
