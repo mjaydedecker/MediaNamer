@@ -1,0 +1,3 @@
+[workspace]
+members = ["medianamer-core", "medianamer-app"]
+resolver = "2"

@@ -1,0 +1,13 @@
+[package]
+name = "medianamer-app"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "medianamer"
+path = "src/main.rs"
+
+[dependencies]
+medianamer-core = { path = "../medianamer-core" }
+iced = { version = "0.13", features = ["tokio"] }
+tokio = { version = "1", features = ["full"] }
