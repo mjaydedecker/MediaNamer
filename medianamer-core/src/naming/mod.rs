@@ -1,5 +1,6 @@
 use crate::sources::{MatchKind, MediaMatch};
 use crate::mediainfo::MediaInfo;
+use crate::{Error, Result};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TokenValues {
@@ -40,7 +41,7 @@ impl TokenValues {
     }
 }
 
-pub fn format_name(template: &str, values: &TokenValues) -> Result<String, String> {
+pub fn format_name(template: &str, values: &TokenValues) -> Result<String> {
     let mut result = String::new();
     let mut chars = template.chars().peekable();
 
@@ -53,7 +54,7 @@ pub fn format_name(template: &str, values: &TokenValues) -> Result<String, Strin
             }
             match substitute(&token, values) {
                 Ok(val) => result.push_str(&val),
-                Err(e) => return Err(e),
+                Err(e) => return Err(Error::Naming(e)),
             }
         } else {
             result.push(ch);
@@ -63,7 +64,7 @@ pub fn format_name(template: &str, values: &TokenValues) -> Result<String, Strin
     Ok(sanitize(&result))
 }
 
-fn substitute(token: &str, v: &TokenValues) -> Result<String, String> {
+fn substitute(token: &str, v: &TokenValues) -> std::result::Result<String, String> {
     match token {
         "title"      => v.title.clone().ok_or_else(|| "{title} not available for this media type".to_string()),
         "series"     => v.series.clone().ok_or_else(|| "{series} not available for this media type".to_string()),
@@ -142,7 +143,7 @@ mod tests {
     #[test]
     fn unknown_token_is_error() {
         let err = format_name("{bogus}", &movie_values()).unwrap_err();
-        assert!(err.contains("bogus"));
+        assert!(err.to_string().contains("bogus"));
     }
 
     #[test]
