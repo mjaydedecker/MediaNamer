@@ -1,5 +1,11 @@
 use strsim::jaro_winkler;
 
+const NOISE_TOKENS: &[&str] = &[
+    "REPACK", "PROPER", "EXTENDED", "UNRATED", "THEATRICAL", "DC", "LIMITED",
+    "RERIP", "READNFO", "INTERNAL", "RETAIL", "DIRECTORS", "CUT", "COMPLETE",
+    "DUBBED", "SUBBED", "HYBRID",
+];
+
 pub const CONFIDENCE_THRESHOLD: f64 = 0.85;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -24,6 +30,10 @@ pub fn parse_filename(filename: &str) -> ParsedFilename {
         .split(['.', '_', '-', ' '])
         .filter(|t| !t.is_empty())
         .take_while(|t| !is_year(t))
+        .filter(|t| {
+            let upper = t.to_uppercase();
+            !NOISE_TOKENS.contains(&upper.as_str())
+        })
         .collect();
 
     ParsedFilename {
@@ -157,5 +167,29 @@ mod tests {
         assert!(score("top gun maverick", "Top Gun: Maverick") >= CONFIDENCE_THRESHOLD);
         assert!(score("mission impossible iii", "Mission: Impossible III") >= CONFIDENCE_THRESHOLD);
         assert!(score("transformers rise of the beasts", "Transformers: Rise of the Beasts") >= CONFIDENCE_THRESHOLD);
+    }
+
+    #[test]
+    fn strips_extended_noise_token() {
+        let p = parse_filename("Movie.Title.EXTENDED.2020.1080p.mkv");
+        assert_eq!(p.title_query, "movie title");
+    }
+
+    #[test]
+    fn strips_repack_noise_token() {
+        let p = parse_filename("Some.Movie.REPACK.2019.BluRay.mkv");
+        assert_eq!(p.title_query, "some movie");
+    }
+
+    #[test]
+    fn strips_proper_noise_token() {
+        let p = parse_filename("Another.Film.PROPER.2021.mkv");
+        assert_eq!(p.title_query, "another film");
+    }
+
+    #[test]
+    fn preserves_non_noise_tokens() {
+        let p = parse_filename("Fire.on.the.Amazon.1993.1080p.AV1.mkv");
+        assert_eq!(p.title_query, "fire on the amazon");
     }
 }
