@@ -2,7 +2,6 @@ use iced::{application, event, time, window, Event, Subscription, Task, Theme};
 use std::sync::Arc;
 use std::time::Duration;
 use state::{AppState, Message, MatchState, View};
-use dark_light;
 use medianamer_core::{
     matcher::{parse_filename, score, CONFIDENCE_THRESHOLD},
     mediainfo::MediaInfo,
@@ -41,7 +40,7 @@ fn detect_is_dark() -> bool {
         .ok()
         .and_then(|o| String::from_utf8(o.stdout).ok())
         .map(|s| s.contains("prefer-dark"))
-        .unwrap_or_else(|| detect_is_dark())
+        .unwrap_or_else(|| dark_light::detect() == dark_light::Mode::Dark)
 }
 
 fn subscription(_state: &AppState) -> Subscription<Message> {
