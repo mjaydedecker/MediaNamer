@@ -21,6 +21,12 @@ mod ui;
 
 fn main() -> iced::Result {
     application("MediaNamer", update, ui::view)
+        .settings(iced::Settings {
+            // Sets the Wayland xdg-toplevel app_id and X11 WM_CLASS to match
+            // StartupWMClass in the .desktop file so the dock can find the icon.
+            id: Some("medianamer".to_string()),
+            ..Default::default()
+        })
         .window(window::Settings {
             icon: app_icon(),
             ..Default::default()
