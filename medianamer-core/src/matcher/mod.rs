@@ -30,6 +30,7 @@ pub fn parse_filename(filename: &str) -> ParsedFilename {
         .split(['.', '_', '-', ' '])
         .filter(|t| !t.is_empty())
         .take_while(|t| !is_year(t))
+        // noise filter runs after year boundary so no NOISE_TOKEN can shadow is_year
         .filter(|t| {
             let upper = t.to_uppercase();
             !NOISE_TOKENS.contains(&upper.as_str())
@@ -45,6 +46,11 @@ pub fn parse_filename(filename: &str) -> ParsedFilename {
 
 pub fn score(query: &str, candidate: &str) -> f64 {
     jaro_winkler(&query.to_lowercase(), &candidate.to_lowercase())
+}
+
+pub fn fallback_queries(query: &str) -> Vec<String> {
+    let words: Vec<&str> = query.split_whitespace().collect();
+    (1..=words.len()).rev().map(|n| words[..n].join(" ")).collect()
 }
 
 fn strip_video_ext(filename: &str) -> &str {
@@ -191,5 +197,36 @@ mod tests {
     fn preserves_non_noise_tokens() {
         let p = parse_filename("Fire.on.the.Amazon.1993.1080p.AV1.mkv");
         assert_eq!(p.title_query, "fire on the amazon");
+    }
+
+    #[test]
+    fn fallback_queries_single_word() {
+        assert_eq!(fallback_queries("avatar"), vec!["avatar"]);
+    }
+
+    #[test]
+    fn fallback_queries_two_words() {
+        assert_eq!(
+            fallback_queries("movie title"),
+            vec!["movie title", "movie"]
+        );
+    }
+
+    #[test]
+    fn fallback_queries_three_words() {
+        assert_eq!(
+            fallback_queries("the dark knight"),
+            vec!["the dark knight", "the dark", "the"]
+        );
+    }
+
+    #[test]
+    fn fallback_queries_empty_string() {
+        assert_eq!(fallback_queries(""), Vec::<String>::new());
+    }
+
+    #[test]
+    fn fallback_queries_whitespace_only() {
+        assert_eq!(fallback_queries("   "), Vec::<String>::new());
     }
 }
