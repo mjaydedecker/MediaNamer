@@ -25,6 +25,8 @@ struct MiTrack {
     track_type: String,
     #[serde(rename = "Format")]
     format: Option<String>,
+    #[serde(rename = "Width")]
+    width: Option<String>,
     #[serde(rename = "Height")]
     height: Option<String>,
     #[serde(rename = "FileExtension")]
@@ -58,6 +60,7 @@ impl MediaInfo {
         let parsed: MiOutput = serde_json::from_slice(json)?;
 
         let mut codec = "Unknown".to_string();
+        let mut width: Option<u32> = None;
         let mut height: Option<u32> = None;
         let mut extension = String::new();
 
@@ -72,6 +75,9 @@ impl MediaInfo {
                     if let Some(fmt) = &track.format {
                         codec = normalize_codec(fmt);
                     }
+                    if let Some(w) = &track.width {
+                        width = w.split_whitespace().next().and_then(|s| s.parse().ok());
+                    }
                     if let Some(h) = &track.height {
                         height = h.split_whitespace().next()
                             .and_then(|s| s.parse().ok());
@@ -83,7 +89,7 @@ impl MediaInfo {
 
         Ok(MediaInfo {
             codec,
-            resolution: bucket_resolution(height),
+            resolution: bucket_resolution(width, height),
             extension,
         })
     }
@@ -98,7 +104,10 @@ fn normalize_codec(format: &str) -> String {
     }
 }
 
-fn bucket_resolution(height: Option<u32>) -> String {
+fn bucket_resolution(width: Option<u32>, height: Option<u32>) -> String {
+    if let Some(w) = width {
+        if w >= 3840 { return "4K".to_string(); }
+    }
     match height {
         Some(h) if h >= 2160 => "4K".to_string(),
         Some(h) if h >= 1080 => "1080p".to_string(),
@@ -113,11 +122,19 @@ mod tests {
     use super::*;
 
     fn fixture(format: &str, height: &str, ext: &str) -> String {
+        fixture_with_width(format, None, height, ext)
+    }
+
+    fn fixture_with_width(format: &str, width: Option<&str>, height: &str, ext: &str) -> String {
+        let width_field = match width {
+            Some(w) => format!(r#", "Width": "{w}""#),
+            None => String::new(),
+        };
         format!(r#"{{
           "media": {{
             "track": [
               {{"@type": "General", "FileExtension": "{ext}"}},
-              {{"@type": "Video", "Format": "{format}", "Height": "{height}"}}
+              {{"@type": "Video", "Format": "{format}"{width_field}, "Height": "{height}"}}
             ]
           }}
         }}"#)
@@ -149,5 +166,16 @@ mod tests {
     fn buckets_480p() {
         let info = MediaInfo::from_json(fixture("AV1", "480", "mkv").as_bytes()).unwrap();
         assert_eq!(info.resolution, "480p");
+    }
+
+    #[test]
+    fn buckets_ultrawide_4k() {
+        // 3840×1600 (21:9 ultrawide) — height alone would give "1080p"
+        let json = r#"{"media":{"track":[
+            {"@type":"General","FileExtension":"mkv"},
+            {"@type":"Video","Format":"HEVC","Width":"3840","Height":"1600"}
+        ]}}"#;
+        let info = MediaInfo::from_json(json.as_bytes()).unwrap();
+        assert_eq!(info.resolution, "4K");
     }
 }

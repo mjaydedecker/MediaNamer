@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 use crate::Result;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -12,6 +13,29 @@ impl std::fmt::Display for MediaType {
         match self {
             MediaType::Movie => write!(f, "Movies"),
             MediaType::Tv    => write!(f, "TV Episodes"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub enum MovieSource { #[default] Tmdb, Omdb }
+
+impl std::fmt::Display for MovieSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self { MovieSource::Tmdb => write!(f, "TMDB"), MovieSource::Omdb => write!(f, "OMDB") }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub enum TvSource { #[default] Tmdb, Omdb, Tvmaze, Tvdb }
+
+impl std::fmt::Display for TvSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TvSource::Tmdb   => write!(f, "TMDB"),
+            TvSource::Omdb   => write!(f, "OMDB"),
+            TvSource::Tvmaze => write!(f, "TVmaze"),
+            TvSource::Tvdb   => write!(f, "TheTVDB"),
         }
     }
 }
@@ -65,6 +89,9 @@ pub trait MediaSource: Send + Sync {
 }
 
 pub mod tmdb;
+pub mod tvmaze;
+pub mod omdb;
+pub mod tvdb;
 
 #[cfg(test)]
 mod tests {

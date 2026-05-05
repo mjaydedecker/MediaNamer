@@ -1,10 +1,19 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use crate::Result;
+use crate::sources::{MovieSource, TvSource};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub tmdb_read_access_token: String,
+    #[serde(default)]
+    pub omdb_api_key: String,
+    #[serde(default)]
+    pub tvdb_api_key: String,
+    #[serde(default)]
+    pub movie_source: MovieSource,
+    #[serde(default)]
+    pub tv_source: TvSource,
     pub templates: Templates,
 }
 
@@ -18,6 +27,10 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             tmdb_read_access_token: String::new(),
+            omdb_api_key: String::new(),
+            tvdb_api_key: String::new(),
+            movie_source: MovieSource::default(),
+            tv_source: TvSource::default(),
             templates: Templates {
                 movie: "{title} ({year}) ({resolution}) ({codec})".to_string(),
                 tv: "{series} - S{season:02}E{episode:02} - {title} ({codec})".to_string(),
@@ -68,6 +81,10 @@ mod tests {
     fn round_trip_toml() {
         let c = Config {
             tmdb_read_access_token: "testkey".to_string(),
+            omdb_api_key: String::new(),
+            tvdb_api_key: String::new(),
+            movie_source: crate::sources::MovieSource::default(),
+            tv_source: crate::sources::TvSource::default(),
             templates: Templates {
                 movie: "{title} ({year})".to_string(),
                 tv: "{series} S{season:02}E{episode:02}".to_string(),

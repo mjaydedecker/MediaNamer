@@ -13,6 +13,20 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
         ]
         .spacing(8),
         row![
+            text("OMDB API Key").width(200),
+            text_input("Paste your OMDB API key", &state.omdb_api_key_draft)
+                .on_input(Message::OmdbApiKeyChanged)
+                .padding(4),
+        ]
+        .spacing(8),
+        row![
+            text("TheTVDB API Key").width(200),
+            text_input("Paste your TheTVDB API key", &state.tvdb_api_key_draft)
+                .on_input(Message::TvdbApiKeyChanged)
+                .padding(4),
+        ]
+        .spacing(8),
+        row![
             text("Movie template").width(160),
             text_input(
                 "{title} ({year}) ({resolution}) ({codec})",

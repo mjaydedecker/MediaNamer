@@ -1,4 +1,5 @@
 use iced::{application, event, time, window, Event, Subscription, Task, Theme};
+use std::sync::Arc;
 use std::time::Duration;
 use state::{AppState, Message, MatchState, View};
 use dark_light;
@@ -6,7 +7,14 @@ use medianamer_core::{
     matcher::{parse_filename, score, CONFIDENCE_THRESHOLD},
     mediainfo::MediaInfo,
     renamer::{execute_rename, RenameJob},
-    sources::{tmdb::TmdbSource, MediaSource, MediaType},
+    sources::{
+        tmdb::TmdbSource,
+        omdb::OmdbSource,
+        tvmaze::TvmazeSource,
+        tvdb::TvdbSource,
+        MediaSource, MediaType,
+        MovieSource, TvSource,
+    },
 };
 
 mod state;
@@ -125,8 +133,19 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
 
         Message::MatchAll => {
-            let api_key = state.config.tmdb_read_access_token.clone();
             let media_type = state.media_type.clone();
+            let source: Arc<dyn MediaSource> = match media_type {
+                MediaType::Movie => match state.config.movie_source {
+                    MovieSource::Tmdb => Arc::new(TmdbSource::new(state.config.tmdb_read_access_token.clone())),
+                    MovieSource::Omdb => Arc::new(OmdbSource::new(state.config.omdb_api_key.clone())),
+                },
+                MediaType::Tv => match state.config.tv_source {
+                    TvSource::Tmdb   => Arc::new(TmdbSource::new(state.config.tmdb_read_access_token.clone())),
+                    TvSource::Omdb   => Arc::new(OmdbSource::new(state.config.omdb_api_key.clone())),
+                    TvSource::Tvmaze => Arc::new(TvmazeSource::new()),
+                    TvSource::Tvdb   => Arc::new(TvdbSource::new(state.config.tvdb_api_key.clone())),
+                },
+            };
             let mut tasks = vec![];
 
             for (idx, file) in state.files.iter_mut().enumerate() {
@@ -144,15 +163,14 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 let query = parsed.title_query.clone();
                 let season = parsed.season;
                 let episode = parsed.episode;
-                let key = api_key.clone();
                 let mt = media_type.clone();
+                let src = source.clone();
 
                 tasks.push(Task::perform(
                     async move {
-                        let source = TmdbSource::new(key);
                         match mt {
-                            MediaType::Movie => source.search_movie(&query).await,
-                            MediaType::Tv => source.search_tv(&query, season, episode).await,
+                            MediaType::Movie => src.search_movie(&query).await,
+                            MediaType::Tv    => src.search_tv(&query, season, episode).await,
                         }
                         .map_err(|e| e.to_string())
                     },
@@ -247,6 +265,22 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.access_token_draft = k;
             Task::none()
         }
+        Message::OmdbApiKeyChanged(k) => {
+            state.omdb_api_key_draft = k;
+            Task::none()
+        }
+        Message::TvdbApiKeyChanged(k) => {
+            state.tvdb_api_key_draft = k;
+            Task::none()
+        }
+        Message::MovieSourceChanged(s) => {
+            state.config.movie_source = s;
+            Task::none()
+        }
+        Message::TvSourceChanged(s) => {
+            state.config.tv_source = s;
+            Task::none()
+        }
         Message::MovieTemplateChanged(t) => {
             state.movie_template_draft = t;
             Task::none()
@@ -257,6 +291,8 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         Message::SaveSettings => {
             state.config.tmdb_read_access_token = state.access_token_draft.clone();
+            state.config.omdb_api_key = state.omdb_api_key_draft.clone();
+            state.config.tvdb_api_key = state.tvdb_api_key_draft.clone();
             state.config.templates.movie = state.movie_template_draft.clone();
             state.config.templates.tv = state.tv_template_draft.clone();
             let _ = state.config.save();
