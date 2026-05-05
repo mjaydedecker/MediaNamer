@@ -107,6 +107,8 @@ fn normalize_codec(format: &str) -> String {
 fn bucket_resolution(width: Option<u32>, height: Option<u32>) -> String {
     if let Some(w) = width {
         if w >= 3840 { return "2160p".to_string(); }
+        if w >= 1920 { return "1080p".to_string(); }
+        if w >= 1280 { return "720p".to_string(); }
     }
     match height {
         Some(h) if h >= 2160 => "2160p".to_string(),
@@ -177,5 +179,14 @@ mod tests {
         ]}}"#;
         let info = MediaInfo::from_json(json.as_bytes()).unwrap();
         assert_eq!(info.resolution, "2160p");
+    }
+
+    #[test]
+    fn buckets_scope_1080p() {
+        // 1920×800 (2.4:1 scope) — height alone would give "720p"
+        let info = MediaInfo::from_json(
+            fixture_with_width("AV1", Some("1920"), "800", "mkv").as_bytes()
+        ).unwrap();
+        assert_eq!(info.resolution, "1080p");
     }
 }
