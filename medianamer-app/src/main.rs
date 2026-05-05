@@ -176,7 +176,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let mut tasks = vec![];
 
             for (idx, file) in state.files.iter_mut().enumerate() {
-                if !matches!(file.match_state, MatchState::Pending) {
+                if matches!(file.match_state, MatchState::Loading) {
                     continue;
                 }
                 file.match_state = MatchState::Loading;
