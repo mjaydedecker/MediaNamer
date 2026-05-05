@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use state::{AppState, Message, MatchState, View};
 use medianamer_core::{
-    matcher::{parse_filename, score, CONFIDENCE_THRESHOLD},
+    matcher::{fallback_queries, parse_filename, score, CONFIDENCE_THRESHOLD},
     mediainfo::MediaInfo,
     renamer::{execute_rename, RenameJob},
     sources::{
@@ -195,11 +195,19 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
                 tasks.push(Task::perform(
                     async move {
-                        match mt {
-                            MediaType::Movie => src.search_movie(&query).await,
-                            MediaType::Tv    => src.search_tv(&query, season, episode).await,
+                        let queries = fallback_queries(&query);
+                        for q in &queries {
+                            let result = match &mt {
+                                MediaType::Movie => src.search_movie(q).await,
+                                MediaType::Tv    => src.search_tv(q, season, episode).await,
+                            };
+                            match result {
+                                Ok(matches) if !matches.is_empty() => return Ok(matches),
+                                Ok(_) => {}
+                                Err(e) => return Err(e.to_string()),
+                            }
                         }
-                        .map_err(|e| e.to_string())
+                        Ok(vec![])
                     },
                     move |result| Message::FileMatched(idx, result),
                 ));
