@@ -15,6 +15,7 @@ iced = { version = "0.13", features = ["tokio"] }
 tokio = { version = "1", features = ["full"] }
 rfd = { version = "0.14", features = ["xdg-portal"] }
 dark-light = "1"
+png = "0.17"
 
 [package.metadata.deb]
 name = "medianamer"
@@ -24,6 +25,7 @@ extended-description = "Rename movie and TV episode files using TMDB metadata an
 depends = "mediainfo"
 section = "utils"
 priority = "optional"
+maintainer-scripts = "debian/"
 assets = [
     ["target/release/medianamer", "usr/bin/", "755"],
     ["assets/medianamer.desktop", "usr/share/applications/", "644"],

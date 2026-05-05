@@ -21,9 +21,30 @@ mod ui;
 
 fn main() -> iced::Result {
     application("MediaNamer", update, ui::view)
+        .window(window::Settings {
+            icon: app_icon(),
+            ..Default::default()
+        })
         .theme(theme)
         .subscription(subscription)
         .run_with(|| (AppState::default(), Task::none()))
+}
+
+fn app_icon() -> Option<window::Icon> {
+    const BYTES: &[u8] = include_bytes!("../assets/icon.png");
+    let decoder = png::Decoder::new(std::io::Cursor::new(BYTES));
+    let mut reader = decoder.read_info().ok()?;
+    let mut buf = vec![0u8; reader.output_buffer_size()];
+    let info = reader.next_frame(&mut buf).ok()?;
+    let rgba: Vec<u8> = match info.color_type {
+        png::ColorType::Rgba => buf[..info.buffer_size()].to_vec(),
+        png::ColorType::Rgb  => buf[..info.buffer_size()]
+            .chunks(3)
+            .flat_map(|p| [p[0], p[1], p[2], 255])
+            .collect(),
+        _ => return None,
+    };
+    window::icon::from_rgba(rgba, info.width, info.height).ok()
 }
 
 fn theme(state: &AppState) -> Theme {
