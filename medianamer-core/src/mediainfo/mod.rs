@@ -105,17 +105,25 @@ fn normalize_codec(format: &str) -> String {
 }
 
 fn bucket_resolution(width: Option<u32>, height: Option<u32>) -> String {
-    if let Some(w) = width {
-        if w >= 3840 { return "2160p".to_string(); }
-        if w >= 1920 { return "1080p".to_string(); }
-        if w >= 1280 { return "720p".to_string(); }
-    }
-    match height {
-        Some(h) if h >= 2160 => "2160p".to_string(),
-        Some(h) if h >= 1080 => "1080p".to_string(),
-        Some(h) if h >= 720  => "720p".to_string(),
-        Some(h)              => format!("{}p", h),
-        None                 => "Unknown".to_string(),
+    // A display must handle both dimensions natively, so use the higher
+    // of what each dimension independently requires.
+    // Width limits: 1280 (720p), 1920 (1080p), 3840 (2160p)
+    // Height limits: 720 (720p), 1080 (1080p), 2160 (2160p)
+    let requires_2160 = width.map(|w| w > 1920).unwrap_or(false)
+        || height.map(|h| h > 1080).unwrap_or(false);
+    let requires_1080 = width.map(|w| w > 1280).unwrap_or(false)
+        || height.map(|h| h > 720).unwrap_or(false);
+
+    if requires_2160 {
+        "2160p".to_string()
+    } else if requires_1080 {
+        "1080p".to_string()
+    } else {
+        match height {
+            Some(h) if h >= 720 => "720p".to_string(),
+            Some(h)             => format!("{}p", h),
+            None                => "Unknown".to_string(),
+        }
     }
 }
 
@@ -186,6 +194,15 @@ mod tests {
         // 1920×800 (2.4:1 scope) — height alone would give "720p"
         let info = MediaInfo::from_json(
             fixture_with_width("AV1", Some("1920"), "800", "mkv").as_bytes()
+        ).unwrap();
+        assert_eq!(info.resolution, "1080p");
+    }
+
+    #[test]
+    fn buckets_square_800_as_1080p() {
+        // 800×800 — height 800 > 720 means a 720p display can't handle it
+        let info = MediaInfo::from_json(
+            fixture_with_width("AV1", Some("800"), "800", "mkv").as_bytes()
         ).unwrap();
         assert_eq!(info.resolution, "1080p");
     }
