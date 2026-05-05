@@ -106,10 +106,10 @@ fn normalize_codec(format: &str) -> String {
 
 fn bucket_resolution(width: Option<u32>, height: Option<u32>) -> String {
     if let Some(w) = width {
-        if w >= 3840 { return "4K".to_string(); }
+        if w >= 3840 { return "2160p".to_string(); }
     }
     match height {
-        Some(h) if h >= 2160 => "4K".to_string(),
+        Some(h) if h >= 2160 => "2160p".to_string(),
         Some(h) if h >= 1080 => "1080p".to_string(),
         Some(h) if h >= 720  => "720p".to_string(),
         Some(h)              => format!("{}p", h),
@@ -152,7 +152,7 @@ mod tests {
     fn parses_hevc_4k() {
         let info = MediaInfo::from_json(fixture("HEVC", "2160", "mp4").as_bytes()).unwrap();
         assert_eq!(info.codec, "H.265");
-        assert_eq!(info.resolution, "4K");
+        assert_eq!(info.resolution, "2160p");
     }
 
     #[test]
@@ -176,6 +176,6 @@ mod tests {
             {"@type":"Video","Format":"HEVC","Width":"3840","Height":"1600"}
         ]}}"#;
         let info = MediaInfo::from_json(json.as_bytes()).unwrap();
-        assert_eq!(info.resolution, "4K");
+        assert_eq!(info.resolution, "2160p");
     }
 }
