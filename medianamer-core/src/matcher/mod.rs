@@ -1,7 +1,7 @@
 use strsim::jaro_winkler;
 
 const NOISE_TOKENS: &[&str] = &[
-    "REPACK", "PROPER", "EXTENDED", "UNRATED", "THEATRICAL", "DC", "LIMITED",
+    "REPACK", "PROPER", "EXTENDED", "UNRATED", "THEATRICAL", "LIMITED",
     "RERIP", "READNFO", "INTERNAL", "RETAIL", "DIRECTORS", "CUT", "COMPLETE",
     "DUBBED", "SUBBED", "HYBRID",
 ];
@@ -228,5 +228,11 @@ mod tests {
     #[test]
     fn fallback_queries_whitespace_only() {
         assert_eq!(fallback_queries("   "), Vec::<String>::new());
+    }
+
+    #[test]
+    fn preserves_dc_prefix_title() {
+        let p = parse_filename("DC.League.of.Super.Pets.2022.1080p.mkv");
+        assert_eq!(p.title_query, "dc league of super pets");
     }
 }
