@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Deep navy-to-indigo background gradient -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#0f0c29"/>
+      <stop offset="50%"  stop-color="#1a1a4e"/>
+      <stop offset="100%" stop-color="#24243e"/>
+    </linearGradient>
+    <!-- Subtle inner glow for depth -->
+    <radialGradient id="glow" cx="50%" cy="45%" r="55%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.07"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Drop shadow filter -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <filter id="softshadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="6" stdDeviation="12" flood-color="#000033" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="512" height="512" rx="90" ry="90" fill="url(#bg)"/>
+  <!-- Inner glow overlay -->
+  <rect width="512" height="512" rx="90" ry="90" fill="url(#glow)"/>
+
+  <!-- ── Script M ── -->
+  <!-- Slightly behind, warm golden tone, rotated counter-clockwise -->
+  <text
+    x="248" y="355"
+    font-family="DejaVu Serif, Georgia, FreeSerif, Times New Roman, serif"
+    font-size="370"
+    font-style="italic"
+    font-weight="bold"
+    text-anchor="middle"
+    fill="#f0c060"
+    opacity="0.55"
+    filter="url(#softshadow)"
+    transform="rotate(-11, 248, 280)">M</text>
+
+  <!-- ── Script N ── -->
+  <!-- In front, cool bright white-blue, rotated clockwise -->
+  <text
+    x="264" y="355"
+    font-family="DejaVu Serif, Georgia, FreeSerif, Times New Roman, serif"
+    font-size="370"
+    font-style="italic"
+    font-weight="bold"
+    text-anchor="middle"
+    fill="#d8e8ff"
+    opacity="0.88"
+    filter="url(#shadow)"
+    transform="rotate(9, 264, 280)">N</text>
+
+  <!-- Thin border ring for polish -->
+  <rect width="512" height="512" rx="90" ry="90"
+        fill="none"
+        stroke="#ffffff" stroke-opacity="0.10" stroke-width="3"/>
+</svg>
