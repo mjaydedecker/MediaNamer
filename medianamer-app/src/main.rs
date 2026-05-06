@@ -130,6 +130,9 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     move |result| Message::MediaInfoLoaded(idx, result),
                 ));
             }
+            let added = state.files.len() - start_index;
+            state.status_msg   = format!("Added {} file(s). Press Match All to fetch metadata.", added);
+            state.message_kind = MessageKind::Info;
             Task::batch(tasks)
         }
 
@@ -212,6 +215,8 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     move |result| Message::FileMatched(idx, result),
                 ));
             }
+            state.status_msg   = "Searching for matches…".to_string();
+            state.message_kind = MessageKind::Info;
             Task::batch(tasks)
         }
 
@@ -238,6 +243,17 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         }
                     }
                 };
+            }
+            let still_loading = state.files.iter().any(|f| matches!(f.match_state, MatchState::Loading));
+            if !still_loading && !state.files.is_empty() {
+                let matched = state.files.iter()
+                    .filter(|f| matches!(f.match_state, MatchState::Matched(_)))
+                    .count();
+                let unresolved = state.files.len() - matched;
+                state.status_msg = format!(
+                    "Match complete — {} matched, {} unresolved.", matched, unresolved
+                );
+                state.message_kind = if matched > 0 { MessageKind::Success } else { MessageKind::Warn };
             }
             Task::none()
         }
@@ -280,11 +296,16 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 let _ = execute_rename(job);
             }
 
+            state.status_msg   = format!("Renaming {} file(s)…", jobs.len());
+            state.message_kind = MessageKind::Info;
             Task::perform(async move { renamed_indices }, Message::RenameComplete)
         }
 
         Message::RenameComplete(indices) => {
+            let count = indices.len();
             state.remove_renamed(&indices);
+            state.status_msg   = format!("Renamed {} file(s) successfully.", count);
+            state.message_kind = MessageKind::Success;
             Task::none()
         }
 
@@ -354,6 +375,8 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         Message::ClearAll => {
             state.files.clear();
+            state.status_msg   = "File list cleared.".to_string();
+            state.message_kind = MessageKind::Info;
             Task::none()
         }
 
@@ -362,7 +385,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 state.sort_dir = state.sort_dir.toggled();
             } else {
                 state.sort_col = Some(col);
-                state.sort_dir = state::SortDir::Asc;
+                state.sort_dir = SortDir::Asc;
             }
             Task::none()
         }
