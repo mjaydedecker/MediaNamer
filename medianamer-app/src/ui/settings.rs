@@ -1,58 +1,122 @@
-use iced::widget::{button, column, row, text, text_input};
-use iced::Element;
+use iced::widget::{button, column, container, row, text, text_input, Space};
+use iced::{Background, Border, Color, Element, Length};
 use crate::state::{AppState, Message};
+use super::palette;
 
 pub fn view(state: &AppState) -> Element<'_, Message> {
+    let pal = palette::palette(state.is_dark);
+    let (s, b, t, t2, ac) = (pal.surface, pal.border, pal.text, pal.text2, pal.accent);
+
+    let close_btn = button(text("✕").size(16).color(t2))
+        .style(move |_, _| button::Style {
+            background: None,
+            border: Border::default(),
+            text_color: t2,
+            ..Default::default()
+        })
+        .on_press(Message::CloseSettings);
+
+    let card = container(
+        column![
+            // Header
+            row![
+                text("Settings").size(15).color(t),
+                Space::with_width(Length::Fill),
+                close_btn,
+            ]
+            .align_y(iced::Alignment::Center),
+
+            // API Keys
+            api_field(
+                "TMDB Read Access Token",
+                "eyJ…",
+                &state.access_token_draft,
+                Message::ApiKeyChanged,
+                t2,
+                b,
+            ),
+            api_field(
+                "OMDB API Key",
+                "abc123…",
+                &state.omdb_api_key_draft,
+                Message::OmdbApiKeyChanged,
+                t2,
+                b,
+            ),
+            api_field(
+                "TheTVDB API Key",
+                "abc123…",
+                &state.tvdb_api_key_draft,
+                Message::TvdbApiKeyChanged,
+                t2,
+                b,
+            ),
+
+            // Footer buttons
+            row![
+                Space::with_width(Length::Fill),
+                button(text("Cancel").size(13).color(t))
+                    .style(move |_, _| button::Style {
+                        background: Some(Background::Color(s)),
+                        border: Border { color: b, width: 1.0, radius: 6.0.into() },
+                        text_color: t,
+                        ..Default::default()
+                    })
+                    .padding([7, 16])
+                    .on_press(Message::CloseSettings),
+                button(text("Save Settings").size(13).color(Color::WHITE))
+                    .style(move |_, _| button::Style {
+                        background: Some(Background::Color(ac)),
+                        border: Border { radius: 6.0.into(), ..Default::default() },
+                        text_color: Color::WHITE,
+                        ..Default::default()
+                    })
+                    .padding([7, 16])
+                    .on_press(Message::SaveSettings),
+            ]
+            .spacing(8)
+            .align_y(iced::Alignment::Center),
+        ]
+        .spacing(16)
+        .padding(24),
+    )
+    .width(460)
+    .style(move |_| container::Style {
+        background: Some(Background::Color(s)),
+        border: Border { color: b, width: 1.0, radius: 10.0.into() },
+        ..Default::default()
+    });
+
+    // Dark scrim + centered card
+    container(card)
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .style(|_| container::Style {
+            background: Some(Background::Color(Color {
+                r: 0.0, g: 0.0, b: 0.0, a: 0.4,
+            })),
+            ..Default::default()
+        })
+        .align_x(iced::alignment::Horizontal::Center)
+        .align_y(iced::alignment::Vertical::Center)
+        .into()
+}
+
+fn api_field<'a>(
+    label: &'a str,
+    placeholder: &'a str,
+    value: &'a str,
+    on_input: impl Fn(String) -> Message + 'a,
+    t2: iced::Color,
+    _border: iced::Color,
+) -> Element<'a, Message> {
     column![
-        text("Settings").size(18),
-        row![
-            text("TMDB Read Access Token").width(200),
-            text_input("Paste your TMDB Read Access Token (eyJ...)", &state.access_token_draft)
-                .on_input(Message::ApiKeyChanged)
-                .padding(4),
-        ]
-        .spacing(8),
-        row![
-            text("OMDB API Key").width(200),
-            text_input("Paste your OMDB API key", &state.omdb_api_key_draft)
-                .on_input(Message::OmdbApiKeyChanged)
-                .padding(4),
-        ]
-        .spacing(8),
-        row![
-            text("TheTVDB API Key").width(200),
-            text_input("Paste your TheTVDB API key", &state.tvdb_api_key_draft)
-                .on_input(Message::TvdbApiKeyChanged)
-                .padding(4),
-        ]
-        .spacing(8),
-        row![
-            text("Movie template").width(160),
-            text_input(
-                "{title} ({year}) ({resolution}) ({codec})",
-                &state.movie_template_draft,
-            )
-            .on_input(Message::MovieTemplateChanged)
-            .padding(4),
-        ]
-        .spacing(8),
-        row![
-            text("TV template").width(160),
-            text_input(
-                "{series} - S{season:02}E{episode:02} - {title} ({codec})",
-                &state.tv_template_draft,
-            )
-            .on_input(Message::TvTemplateChanged)
-            .padding(4),
-        ]
-        .spacing(8),
-        row![
-            button("Save").on_press(Message::SaveSettings),
-            button("Cancel").on_press(Message::CloseSettings),
-        ]
-        .spacing(8),
+        text(label).size(12).color(t2),
+        text_input(placeholder, value)
+            .on_input(on_input)
+            .padding([7, 10])
+            .size(13),
     ]
-    .spacing(16)
-    .padding(24)
+    .spacing(4)
     .into()
 }
