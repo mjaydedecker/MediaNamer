@@ -98,13 +98,13 @@ pub enum View {
     MatchPicker(usize),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SortCol {
     Original,
     Status,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SortDir {
     Asc,
     Desc,
@@ -119,7 +119,7 @@ impl SortDir {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MessageKind {
     Info,
     Success,

@@ -1,7 +1,7 @@
 use iced::{application, event, time, window, Event, Subscription, Task, Theme};
 use std::sync::Arc;
 use std::time::Duration;
-use state::{AppState, Message, MatchState, View};
+use state::{AppState, Message, MatchState, MessageKind, SortCol, SortDir, View};
 use medianamer_core::{
     matcher::{fallback_queries, parse_filename, score, CONFIDENCE_THRESHOLD},
     mediainfo::MediaInfo,
@@ -358,7 +358,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
 
         Message::SortBy(col) => {
-            if state.sort_col == Some(col.clone()) {
+            if state.sort_col == Some(col) {
                 state.sort_dir = state.sort_dir.toggled();
             } else {
                 state.sort_col = Some(col);
