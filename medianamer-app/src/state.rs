@@ -19,6 +19,11 @@ pub struct AppState {
     pub tv_template_draft: String,
     pub drag_hover: bool,
     pub is_dark: bool,
+    pub sort_col:     Option<SortCol>,
+    pub sort_dir:     SortDir,
+    pub status_msg:   String,
+    pub message_kind: MessageKind,
+    pub show_tokens:  bool,
 }
 
 impl Default for AppState {
@@ -36,6 +41,11 @@ impl Default for AppState {
             view: View::Main,
             drag_hover: false,
             is_dark: crate::detect_is_dark(),
+            sort_col:     None,
+            sort_dir:     SortDir::Asc,
+            status_msg:   "Ready — add files to get started.".to_string(),
+            message_kind: MessageKind::Info,
+            show_tokens:  false,
         }
     }
 }
@@ -88,6 +98,34 @@ pub enum View {
     MatchPicker(usize),
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum SortCol {
+    Original,
+    Status,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum SortDir {
+    Asc,
+    Desc,
+}
+
+impl SortDir {
+    pub fn toggled(&self) -> Self {
+        match self {
+            SortDir::Asc  => SortDir::Desc,
+            SortDir::Desc => SortDir::Asc,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum MessageKind {
+    Info,
+    Success,
+    Warn,
+}
+
 #[derive(Debug, Clone)]
 pub enum Message {
     OpenFilePicker,
@@ -117,6 +155,8 @@ pub enum Message {
     RefreshSystemTheme,
     RemoveFile(usize),
     ClearAll,
+    SortBy(SortCol),
+    ToggleTokens,
 }
 
 #[cfg(test)]

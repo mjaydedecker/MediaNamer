@@ -356,5 +356,20 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.files.clear();
             Task::none()
         }
+
+        Message::SortBy(col) => {
+            if state.sort_col == Some(col.clone()) {
+                state.sort_dir = state.sort_dir.toggled();
+            } else {
+                state.sort_col = Some(col);
+                state.sort_dir = state::SortDir::Asc;
+            }
+            Task::none()
+        }
+
+        Message::ToggleTokens => {
+            state.show_tokens = !state.show_tokens;
+            Task::none()
+        }
     }
 }
