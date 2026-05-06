@@ -78,7 +78,8 @@ fn table_header<'a>(state: &AppState, pal: &Palette) -> Element<'a, Message> {
     row![
         sort_col_btn("Original Filename", SortCol::Original, &state.sort_col, &state.sort_dir, pal),
         text("New Filename").size(11).color(t2).width(Length::Fill),
-        text("Status").size(11).color(t2).width(Length::Fixed(130.0)),
+        container(sort_col_btn("Status", SortCol::Status, &state.sort_col, &state.sort_dir, pal))
+            .width(Length::Fixed(130.0)),
         Space::with_width(Length::Fixed(36.0)),
     ]
     .spacing(0)
