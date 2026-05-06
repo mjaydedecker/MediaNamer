@@ -1,6 +1,7 @@
 use iced::Element;
 use crate::state::{AppState, Message, View};
 
+pub mod palette;
 mod file_list;
 mod format_bar;
 mod help_panel;
