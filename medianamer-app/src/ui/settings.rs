@@ -33,7 +33,6 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
                 &state.access_token_draft,
                 Message::ApiKeyChanged,
                 t2,
-                b,
             ),
             api_field(
                 "OMDB API Key",
@@ -41,7 +40,6 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
                 &state.omdb_api_key_draft,
                 Message::OmdbApiKeyChanged,
                 t2,
-                b,
             ),
             api_field(
                 "TheTVDB API Key",
@@ -49,7 +47,6 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
                 &state.tvdb_api_key_draft,
                 Message::TvdbApiKeyChanged,
                 t2,
-                b,
             ),
 
             // Footer buttons
@@ -108,7 +105,6 @@ fn api_field<'a>(
     value: &'a str,
     on_input: impl Fn(String) -> Message + 'a,
     t2: iced::Color,
-    _border: iced::Color,
 ) -> Element<'a, Message> {
     column![
         text(label).size(12).color(t2),

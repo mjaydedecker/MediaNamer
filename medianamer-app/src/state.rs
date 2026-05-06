@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use dark_light;
 use medianamer_core::{
     config::Config,
     mediainfo::MediaInfo,

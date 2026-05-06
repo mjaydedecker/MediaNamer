@@ -11,10 +11,17 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
     // Empty state
     if state.files.is_empty() {
         let t3 = pal.text3;
+        let ac = pal.accent;
+        let (msg, color) = if state.drag_hover {
+            ("Release to add files", ac)
+        } else {
+            ("No files added. Click + Add Files to begin.", t3)
+        };
+        let border_color = if state.drag_hover { ac } else { pal.bg };
         return container(
             column![
-                text("◎").size(40).color(t3),
-                text("No files added. Click + Add Files to begin.").size(14).color(t3),
+                text("◎").size(40).color(color),
+                text(msg).size(14).color(color),
             ]
             .spacing(12)
             .align_x(iced::Alignment::Center),
@@ -23,6 +30,10 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
         .height(Length::Fill)
         .align_x(iced::alignment::Horizontal::Center)
         .align_y(iced::alignment::Vertical::Center)
+        .style(move |_| container::Style {
+            border: iced::Border { color: border_color, width: if state.drag_hover { 2.0 } else { 0.0 }, radius: 4.0.into() },
+            ..Default::default()
+        })
         .into();
     }
 

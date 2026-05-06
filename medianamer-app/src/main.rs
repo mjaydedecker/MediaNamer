@@ -1,7 +1,7 @@
 use iced::{application, event, time, window, Event, Subscription, Task, Theme};
 use std::sync::Arc;
 use std::time::Duration;
-use state::{AppState, Message, MatchState, MessageKind, SortCol, SortDir, View};
+use state::{AppState, Message, MatchState, MessageKind, SortDir, View};
 use medianamer_core::{
     matcher::{fallback_queries, parse_filename, score, CONFIDENCE_THRESHOLD},
     mediainfo::MediaInfo,
