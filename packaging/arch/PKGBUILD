@@ -1,5 +1,5 @@
 pkgname=medianamer
-pkgver=0.13.0
+pkgver=0.14.0
 pkgrel=1
 pkgdesc="Rename movie and TV episode files using TMDB metadata"
 arch=('x86_64')
