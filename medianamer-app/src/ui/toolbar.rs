@@ -58,10 +58,10 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
     ]
     .spacing(8)
     .align_y(iced::Alignment::Center)
-    .padding([0, 16]);
+    .padding([10, 16]);
 
     container(inner)
-        .height(52)
+        .height(60)
         .width(Length::Fill)
         .style(move |_| container::Style {
             background: Some(Background::Color(s)),
