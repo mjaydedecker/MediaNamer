@@ -85,7 +85,8 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
                     border: Border { radius: 4.0.into(), ..Default::default() },
                     ..Default::default()
                 })
-                .padding([4, 8]),
+                .padding([6, 10])
+                .align_y(iced::alignment::Vertical::Center),
                 Space::with_width(10),
                 text(*ex).size(12).color(t2),
             ]
