@@ -86,8 +86,8 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
                     border: Border { radius: 4.0.into(), ..Default::default() },
                     ..Default::default()
                 })
-                .padding([2, 6]),
-                Space::with_width(8),
+                .padding([4, 8]),
+                Space::with_width(10),
                 text(*ex).size(12).color(t2),
             ]
             .align_y(iced::Alignment::Center)
@@ -96,7 +96,7 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
         .collect();
 
     let panel = container(
-        column(token_rows).spacing(6).padding([12, 16]),
+        column(token_rows).spacing(10).padding([14, 16]),
     )
     .width(Length::Fill)
     .style(move |_| container::Style {
