@@ -80,8 +80,7 @@ fn ghost_btn<'a>(label: &str, msg: Message, disabled: bool, pal: &Palette) -> El
             text_color: tc,
             ..Default::default()
         })
-        .padding([0, 14])
-        .height(34)
+        .padding([9, 14])
         .on_press_maybe((!disabled).then_some(msg))
         .into()
 }
@@ -96,8 +95,7 @@ fn primary_btn<'a>(label: &str, msg: Message, disabled: bool, pal: &Palette) -> 
             text_color: tc,
             ..Default::default()
         })
-        .padding([0, 14])
-        .height(34)
+        .padding([9, 14])
         .on_press_maybe((!disabled).then_some(msg))
         .into()
 }
@@ -111,7 +109,7 @@ fn icon_btn<'a>(icon: &str, msg: Message, pal: &Palette) -> Element<'a, Message>
             text_color: t2,
             ..Default::default()
         })
-        .width(34).height(34)
+        .padding(9)
         .on_press(msg)
         .into()
 }
