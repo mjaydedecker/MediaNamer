@@ -77,6 +77,7 @@ fn summary_bar(state: &AppState) -> Element<'_, Message> {
     .height(28)
     .width(Length::Fill)
     .padding([0, 16])
+    .align_y(iced::alignment::Vertical::Center)
     .style(move |_| container::Style {
         background: Some(Background::Color(s)),
         ..Default::default()
@@ -98,6 +99,7 @@ fn message_bar(state: &AppState) -> Element<'_, Message> {
     .height(32)
     .width(Length::Fill)
     .padding([0, 16])
+    .align_y(iced::alignment::Vertical::Center)
     .style(move |_| container::Style {
         background: Some(Background::Color(s2)),
         ..Default::default()
