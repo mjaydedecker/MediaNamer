@@ -38,7 +38,7 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
             text("Format").size(12).color(t2),
             text_input("e.g. {title} ({year}).{ext}", &template)
                 .on_input(Message::TemplateChanged)
-                .padding([0, 10])
+                .padding([8, 10])
                 .size(13),
             button(
                 row![
@@ -54,8 +54,7 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
                 text_color: tok_btn_tc,
                 ..Default::default()
             })
-            .padding([0, 12])
-            .height(34)
+            .padding([9, 12])
             .on_press(Message::ToggleTokens),
         ]
         .spacing(10)
