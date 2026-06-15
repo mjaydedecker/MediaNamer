@@ -20,7 +20,8 @@ mod state;
 mod ui;
 
 fn main() -> iced::Result {
-    application("MediaNamer", update, ui::view)
+    application(|| (AppState::default(), Task::none()), update, ui::view)
+        .title("MediaNamer")
         .window(window::Settings {
             icon: app_icon(),
             // application_id becomes the Wayland xdg-toplevel app_id and X11
@@ -34,7 +35,7 @@ fn main() -> iced::Result {
         })
         .theme(theme)
         .subscription(subscription)
-        .run_with(|| (AppState::default(), Task::none()))
+        .run()
 }
 
 fn app_icon() -> Option<window::Icon> {
@@ -81,7 +82,7 @@ fn subscription(_state: &AppState) -> Subscription<Message> {
             Event::Window(window::Event::FilesHoveredLeft) => Some(Message::DragHovered(false)),
             _ => None,
         }),
-        time::every(Duration::from_secs(3)).map(|_| Message::RefreshSystemTheme),
+        time::every(Duration::from_secs(10)).map(|_| Message::RefreshSystemTheme),
     ])
 }
 
@@ -364,7 +365,22 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::RefreshSystemTheme => {
-            state.is_dark = detect_is_dark();
+            // detect_is_dark() spawns a `gsettings` subprocess and blocks until
+            // it exits. Running it inline on the UI thread freezes the event
+            // loop for tens of milliseconds every poll, which shows up as a
+            // periodic hitch while resizing. Run it on a blocking worker thread
+            // and apply the result via a message instead.
+            Task::perform(
+                async { tokio::task::spawn_blocking(detect_is_dark).await.unwrap_or(false) },
+                Message::SystemThemeDetected,
+            )
+        }
+        Message::SystemThemeDetected(is_dark) => {
+            // Only mutate when the value actually changes to avoid needless
+            // restyles on every poll.
+            if state.is_dark != is_dark {
+                state.is_dark = is_dark;
+            }
             Task::none()
         }
         Message::RemoveFile(idx) => {

@@ -91,7 +91,7 @@ fn table_header<'a>(state: &AppState, pal: &Palette) -> Element<'a, Message> {
         text("New Filename").size(11).color(t2).width(Length::Fill),
         container(sort_col_btn("Status", SortCol::Status, &state.sort_col, &state.sort_dir, pal))
             .width(Length::Fixed(130.0)),
-        Space::with_width(Length::Fixed(36.0)),
+        Space::new().width(Length::Fixed(36.0)),
     ]
     .spacing(0)
     .padding([0, 16])

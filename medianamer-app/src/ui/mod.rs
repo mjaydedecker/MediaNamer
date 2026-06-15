@@ -45,7 +45,7 @@ fn main_view(state: &AppState) -> Element<'_, Message> {
 
 fn summary_bar(state: &AppState) -> Element<'_, Message> {
     if state.files.is_empty() {
-        return Space::with_height(0).into();
+        return Space::new().height(0).into();
     }
 
     let pal       = palette::palette(state.is_dark);
