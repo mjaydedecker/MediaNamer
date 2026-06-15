@@ -68,6 +68,49 @@ async fn search_tv_fetches_episode_detail() {
 }
 
 #[tokio::test]
+async fn lookup_movie_by_tmdb_id() {
+    let server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/3/movie/603"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "id": 603, "title": "The Matrix", "release_date": "1999-03-30"
+        })))
+        .mount(&server)
+        .await;
+
+    let source = TmdbSource::new_with_base_url("dummy_key", &server.uri());
+    let results = source.lookup_movie(None, Some(603)).await.unwrap();
+
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].display_title(), "The Matrix");
+    assert!(matches!(&results[0].kind, MatchKind::Movie { year: Some(1999), .. }));
+}
+
+#[tokio::test]
+async fn lookup_movie_by_imdb_id() {
+    let server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/3/find/tt0133093"))
+        .and(query_param("external_source", "imdb_id"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "movie_results": [
+                {"id": 603, "title": "The Matrix", "release_date": "1999-03-30"}
+            ],
+            "tv_results": []
+        })))
+        .mount(&server)
+        .await;
+
+    let source = TmdbSource::new_with_base_url("dummy_key", &server.uri());
+    let results = source.lookup_movie(Some("tt0133093"), None).await.unwrap();
+
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].display_title(), "The Matrix");
+}
+
+#[tokio::test]
 async fn search_movie_empty_results() {
     let server = MockServer::start().await;
 

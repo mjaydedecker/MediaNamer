@@ -14,10 +14,18 @@ pub struct ParsedFilename {
     pub season: Option<u32>,
     pub episode: Option<u32>,
     pub year: Option<u32>,
+    /// IMDb id embedded in the filename (e.g. `{imdb-tt0133093}`), if any.
+    pub imdb_id: Option<String>,
+    /// TMDB id embedded in the filename (e.g. `{tmdb-603}`), if any.
+    pub tmdb_id: Option<u64>,
 }
 
 pub fn parse_filename(filename: &str) -> ParsedFilename {
     let stem = strip_video_ext(filename);
+    // IDs are scanned across the whole stem — they usually sit at the end,
+    // after the SxxExx marker (Plex/Sonarr/Radarr style).
+    let imdb_id = extract_imdb_id(stem);
+    let tmdb_id = extract_tmdb_id(stem);
     let (season, episode, se_end) = extract_season_episode(stem);
     let pre_se = &stem[..se_end];
 
@@ -51,11 +59,76 @@ pub fn parse_filename(filename: &str) -> ParsedFilename {
         season,
         episode,
         year,
+        imdb_id,
+        tmdb_id,
     }
 }
 
 pub fn score(query: &str, candidate: &str) -> f64 {
     jaro_winkler(&query.to_lowercase(), &candidate.to_lowercase())
+}
+
+/// Title similarity adjusted by a release-year penalty. When both the parsed
+/// filename and the candidate carry a year, a mismatch lowers the score so that
+/// the right entry from a same-named set (remakes, reboots) ranks first without
+/// hard-filtering candidates out entirely. Missing years leave the base score
+/// untouched (no evidence either way).
+pub fn match_confidence(
+    query: &str,
+    query_year: Option<u32>,
+    candidate: &str,
+    candidate_year: Option<u32>,
+) -> f64 {
+    let base = score(query, candidate);
+    match (query_year, candidate_year) {
+        (Some(q), Some(c)) => {
+            let penalty = match q.abs_diff(c) {
+                0 => 0.0,
+                1 => 0.05,
+                _ => 0.20,
+            };
+            (base - penalty).max(0.0)
+        }
+        _ => base,
+    }
+}
+
+/// Extracts an embedded IMDb id (e.g. `tt0133093`) from anywhere in the stem.
+/// Requires 7-8 digits after `tt` and a non-alphanumeric boundary before it so
+/// it doesn't fire inside ordinary words.
+fn extract_imdb_id(s: &str) -> Option<String> {
+    let lower = s.to_ascii_lowercase();
+    let b = lower.as_bytes();
+    let mut i = 0;
+    while i + 2 < b.len() {
+        let boundary = i == 0 || !b[i - 1].is_ascii_alphanumeric();
+        if boundary && b[i] == b't' && b[i + 1] == b't' && b[i + 2].is_ascii_digit() {
+            let mut j = i + 2;
+            while j < b.len() && b[j].is_ascii_digit() {
+                j += 1;
+            }
+            let digits = j - (i + 2);
+            if (7..=8).contains(&digits) {
+                return Some(lower[i..j].to_string());
+            }
+        }
+        i += 1;
+    }
+    None
+}
+
+/// Extracts an embedded TMDB id from Plex/Sonarr/Radarr style tags such as
+/// `{tmdb-603}`, `[tmdbid-603]` or `tmdb-603`. A separator (or the `id`
+/// suffix) is required between `tmdb` and the digits so a bare "tmdb" word
+/// followed by a space + year can't be misread as an id.
+fn extract_tmdb_id(s: &str) -> Option<u64> {
+    let lower = s.to_ascii_lowercase();
+    let idx = lower.find("tmdb")?;
+    let rest = &lower[idx + 4..];
+    let rest = rest.strip_prefix("id").unwrap_or(rest);
+    let rest = rest.strip_prefix(['-', '_', ':']).unwrap_or(rest);
+    let digits: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
+    digits.parse().ok()
 }
 
 pub fn fallback_queries(query: &str) -> Vec<String> {
@@ -258,5 +331,84 @@ mod tests {
     fn preserves_dc_prefix_title() {
         let p = parse_filename("DC.League.of.Super.Pets.2022.1080p.mkv");
         assert_eq!(p.title_query, "dc league of super pets");
+    }
+
+    #[test]
+    fn extracts_imdb_id_from_plex_tag() {
+        let p = parse_filename("The Matrix (1999) {imdb-tt0133093}.mkv");
+        assert_eq!(p.imdb_id, Some("tt0133093".to_string()));
+        assert_eq!(p.title_query, "the matrix");
+        assert_eq!(p.year, Some(1999));
+    }
+
+    #[test]
+    fn extracts_imdb_id_8_digits() {
+        let p = parse_filename("Some.Show.S01E01.tt12345678.mkv");
+        assert_eq!(p.imdb_id, Some("tt12345678".to_string()));
+    }
+
+    #[test]
+    fn no_imdb_id_when_absent() {
+        let p = parse_filename("The Matrix (1999).mkv");
+        assert_eq!(p.imdb_id, None);
+    }
+
+    #[test]
+    fn imdb_id_not_matched_inside_word() {
+        // "tt" embedded in a word with too few/no trailing digits must not match
+        let p = parse_filename("Scott.Pilgrim.2010.1080p.mkv");
+        assert_eq!(p.imdb_id, None);
+    }
+
+    #[test]
+    fn extracts_tmdb_id_plex_tag() {
+        let p = parse_filename("The Matrix (1999) {tmdb-603}.mkv");
+        assert_eq!(p.tmdb_id, Some(603));
+    }
+
+    #[test]
+    fn extracts_tmdb_id_radarr_tag() {
+        let p = parse_filename("The Matrix (1999) [tmdbid-603].mkv");
+        assert_eq!(p.tmdb_id, Some(603));
+    }
+
+    #[test]
+    fn no_tmdb_id_when_absent() {
+        let p = parse_filename("The Matrix (1999).mkv");
+        assert_eq!(p.tmdb_id, None);
+    }
+
+    #[test]
+    fn tmdb_word_with_space_year_is_not_an_id() {
+        let p = parse_filename("tmdb 2019 documentary.mkv");
+        assert_eq!(p.tmdb_id, None);
+    }
+
+    #[test]
+    fn match_confidence_same_year_unpenalised() {
+        let same = match_confidence("the lion king", Some(1994), "The Lion King", Some(1994));
+        assert!(same >= CONFIDENCE_THRESHOLD);
+    }
+
+    #[test]
+    fn match_confidence_year_mismatch_demotes_remake() {
+        let original = match_confidence("the lion king", Some(1994), "The Lion King", Some(1994));
+        let remake = match_confidence("the lion king", Some(1994), "The Lion King", Some(2019));
+        assert!(original > remake);
+        assert!((original - remake - 0.20).abs() < 1e-9);
+    }
+
+    #[test]
+    fn match_confidence_off_by_one_small_penalty() {
+        let exact = match_confidence("foo", Some(2000), "foo", Some(2000));
+        let off_by_one = match_confidence("foo", Some(2000), "foo", Some(2001));
+        assert!((exact - off_by_one - 0.05).abs() < 1e-9);
+    }
+
+    #[test]
+    fn match_confidence_missing_year_uses_base_score() {
+        let with = match_confidence("foo bar", None, "Foo Bar", Some(2019));
+        let base = score("foo bar", "Foo Bar");
+        assert!((with - base).abs() < 1e-9);
     }
 }
