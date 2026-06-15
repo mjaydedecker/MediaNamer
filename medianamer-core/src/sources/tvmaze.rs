@@ -29,11 +29,13 @@ struct EpisodeInfo { name: String, season: u32, number: u32 }
 impl MediaSource for TvmazeSource {
     fn name(&self) -> &str { "TVmaze" }
 
-    async fn search_movie(&self, _query: &str) -> Result<Vec<MediaMatch>> {
+    async fn search_movie(&self, _query: &str, _year: Option<u32>) -> Result<Vec<MediaMatch>> {
         Ok(vec![])
     }
 
-    async fn search_tv(&self, query: &str, season: Option<u32>, episode: Option<u32>) -> Result<Vec<MediaMatch>> {
+    // TVmaze's /search/shows endpoint has no year filter, so `_year` is accepted
+    // for trait conformance but unused.
+    async fn search_tv(&self, query: &str, season: Option<u32>, episode: Option<u32>, _year: Option<u32>) -> Result<Vec<MediaMatch>> {
         let url = format!("{}/search/shows", self.base_url);
         let results: Vec<ShowResult> = self.client
             .get(&url)

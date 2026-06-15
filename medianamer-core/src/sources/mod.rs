@@ -79,12 +79,13 @@ impl MediaMatch {
 #[async_trait]
 pub trait MediaSource: Send + Sync {
     fn name(&self) -> &str;
-    async fn search_movie(&self, query: &str) -> Result<Vec<MediaMatch>>;
+    async fn search_movie(&self, query: &str, year: Option<u32>) -> Result<Vec<MediaMatch>>;
     async fn search_tv(
         &self,
         query: &str,
         season: Option<u32>,
         episode: Option<u32>,
+        year: Option<u32>,
     ) -> Result<Vec<MediaMatch>>;
 }
 

@@ -63,10 +63,18 @@ fn year_from_str(s: &Option<String>) -> Option<u32> {
 impl MediaSource for OmdbSource {
     fn name(&self) -> &str { "OMDB" }
 
-    async fn search_movie(&self, query: &str) -> Result<Vec<MediaMatch>> {
+    async fn search_movie(&self, query: &str, year: Option<u32>) -> Result<Vec<MediaMatch>> {
+        let mut params: Vec<(&str, String)> = vec![
+            ("apikey", self.api_key.clone()),
+            ("s", query.to_string()),
+            ("type", "movie".to_string()),
+        ];
+        if let Some(y) = year {
+            params.push(("y", y.to_string()));
+        }
         let resp: SearchResponse = self.client
             .get(&self.base_url)
-            .query(&[("apikey", &self.api_key), ("s", &query.to_string()), ("type", &"movie".to_string())])
+            .query(&params)
             .send().await?
             .error_for_status().map_err(|e| Error::Tmdb(e.to_string()))?
             .json().await?;
@@ -77,10 +85,18 @@ impl MediaSource for OmdbSource {
         }).collect())
     }
 
-    async fn search_tv(&self, query: &str, season: Option<u32>, episode: Option<u32>) -> Result<Vec<MediaMatch>> {
+    async fn search_tv(&self, query: &str, season: Option<u32>, episode: Option<u32>, year: Option<u32>) -> Result<Vec<MediaMatch>> {
+        let mut params: Vec<(&str, String)> = vec![
+            ("apikey", self.api_key.clone()),
+            ("s", query.to_string()),
+            ("type", "series".to_string()),
+        ];
+        if let Some(y) = year {
+            params.push(("y", y.to_string()));
+        }
         let resp: SearchResponse = self.client
             .get(&self.base_url)
-            .query(&[("apikey", &self.api_key), ("s", &query.to_string()), ("type", &"series".to_string())])
+            .query(&params)
             .send().await?
             .error_for_status().map_err(|e| Error::Tmdb(e.to_string()))?
             .json().await?;

@@ -68,13 +68,17 @@ fn year_from_date(date: &Option<String>) -> Option<u32> {
 impl MediaSource for TmdbSource {
     fn name(&self) -> &str { "TMDB" }
 
-    async fn search_movie(&self, query: &str) -> Result<Vec<MediaMatch>> {
+    async fn search_movie(&self, query: &str, year: Option<u32>) -> Result<Vec<MediaMatch>> {
         let url = format!("{}/3/search/movie", self.base_url);
+        let mut params: Vec<(&str, String)> = vec![("query", query.to_string())];
+        if let Some(y) = year {
+            params.push(("primary_release_year", y.to_string()));
+        }
         let resp: MovieSearchResponse = self
             .client
             .get(&url)
             .bearer_auth(&self.api_key)
-            .query(&[("query", query)])
+            .query(&params)
             .send()
             .await?
             .error_for_status()
@@ -96,13 +100,18 @@ impl MediaSource for TmdbSource {
         query: &str,
         season: Option<u32>,
         episode: Option<u32>,
+        year: Option<u32>,
     ) -> Result<Vec<MediaMatch>> {
         let url = format!("{}/3/search/tv", self.base_url);
+        let mut params: Vec<(&str, String)> = vec![("query", query.to_string())];
+        if let Some(y) = year {
+            params.push(("first_air_date_year", y.to_string()));
+        }
         let resp: TvSearchResponse = self
             .client
             .get(&url)
             .bearer_auth(&self.api_key)
-            .query(&[("query", query)])
+            .query(&params)
             .send()
             .await?
             .error_for_status()

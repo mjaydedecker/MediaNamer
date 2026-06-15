@@ -79,18 +79,25 @@ struct EpisodeItem {
 impl MediaSource for TvdbSource {
     fn name(&self) -> &str { "TheTVDB" }
 
-    async fn search_movie(&self, _query: &str) -> Result<Vec<MediaMatch>> {
+    async fn search_movie(&self, _query: &str, _year: Option<u32>) -> Result<Vec<MediaMatch>> {
         Ok(vec![])
     }
 
-    async fn search_tv(&self, query: &str, season: Option<u32>, episode: Option<u32>) -> Result<Vec<MediaMatch>> {
+    async fn search_tv(&self, query: &str, season: Option<u32>, episode: Option<u32>, year: Option<u32>) -> Result<Vec<MediaMatch>> {
         let token = self.bearer_token().await?;
 
         let search_url = format!("{}/v4/search", self.base_url);
+        let mut params: Vec<(&str, String)> = vec![
+            ("query", query.to_string()),
+            ("type", "series".to_string()),
+        ];
+        if let Some(y) = year {
+            params.push(("year", y.to_string()));
+        }
         let resp: SearchResp = self.client
             .get(&search_url)
             .bearer_auth(&token)
-            .query(&[("query", query), ("type", "series")])
+            .query(&params)
             .send().await?
             .error_for_status().map_err(|e| Error::Tmdb(e.to_string()))?
             .json().await?;

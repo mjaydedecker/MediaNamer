@@ -194,6 +194,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 let query = parsed.title_query.clone();
                 let season = parsed.season;
                 let episode = parsed.episode;
+                let year = parsed.year;
                 let mt = media_type.clone();
                 let src = source.clone();
 
@@ -202,8 +203,8 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         let queries = fallback_queries(&query);
                         for q in &queries {
                             let result = match &mt {
-                                MediaType::Movie => src.search_movie(q).await,
-                                MediaType::Tv    => src.search_tv(q, season, episode).await,
+                                MediaType::Movie => src.search_movie(q, year).await,
+                                MediaType::Tv    => src.search_tv(q, season, episode, year).await,
                             };
                             match result {
                                 Ok(matches) if !matches.is_empty() => return Ok(matches),
