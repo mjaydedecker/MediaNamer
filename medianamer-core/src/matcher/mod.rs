@@ -13,6 +13,7 @@ pub struct ParsedFilename {
     pub title_query: String,
     pub season: Option<u32>,
     pub episode: Option<u32>,
+    pub year: Option<u32>,
 }
 
 pub fn parse_filename(filename: &str) -> ParsedFilename {
@@ -25,10 +26,18 @@ pub fn parse_filename(filename: &str) -> ParsedFilename {
     // format where year, resolution and codec are wrapped in parens.
     let normalized = pre_se.replace(['(', ')'], " ");
 
-    // Split on common separators and stop at the first year token.
-    let title_tokens: Vec<&str> = normalized
+    let tokens: Vec<&str> = normalized
         .split(['.', '_', '-', ' '])
         .filter(|t| !t.is_empty())
+        .collect();
+
+    // The title ends at the first year token; that token doubles as the release
+    // year we hand to the metadata APIs to disambiguate remakes / same-named
+    // series (e.g. "The Lion King" 1994 vs 2019).
+    let year = tokens.iter().find(|t| is_year(t)).and_then(|t| t.parse::<u32>().ok());
+
+    let title_tokens: Vec<&str> = tokens
+        .into_iter()
         .take_while(|t| !is_year(t))
         // noise filter runs after year boundary so no NOISE_TOKEN can shadow is_year
         .filter(|t| {
@@ -41,6 +50,7 @@ pub fn parse_filename(filename: &str) -> ParsedFilename {
         title_query: title_tokens.join(" ").to_lowercase(),
         season,
         episode,
+        year,
     }
 }
 
@@ -105,6 +115,20 @@ mod tests {
         assert_eq!(p.title_query, "fire on the amazon");
         assert_eq!(p.season, None);
         assert_eq!(p.episode, None);
+        assert_eq!(p.year, Some(1993));
+    }
+
+    #[test]
+    fn captures_year_from_own_output_format() {
+        let p = parse_filename("Top Gun: Maverick (2022) (1080p) (AV1).mkv");
+        assert_eq!(p.title_query, "top gun: maverick");
+        assert_eq!(p.year, Some(2022));
+    }
+
+    #[test]
+    fn year_is_none_when_absent() {
+        let p = parse_filename("Some.Untagged.Movie.1080p.mkv");
+        assert_eq!(p.year, None);
     }
 
     #[test]

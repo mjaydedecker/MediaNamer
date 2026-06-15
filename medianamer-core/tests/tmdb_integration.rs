@@ -11,6 +11,7 @@ async fn search_movie_returns_match() {
     Mock::given(method("GET"))
         .and(path("/3/search/movie"))
         .and(query_param("query", "Fire on the Amazon"))
+        .and(query_param("primary_release_year", "1993"))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "results": [
                 {"id": 18898, "title": "Fire on the Amazon", "release_date": "1993-03-14"}
@@ -20,7 +21,7 @@ async fn search_movie_returns_match() {
         .await;
 
     let source = TmdbSource::new_with_base_url("dummy_key", &server.uri());
-    let results = source.search_movie("Fire on the Amazon").await.unwrap();
+    let results = source.search_movie("Fire on the Amazon", Some(1993)).await.unwrap();
 
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].display_title(), "Fire on the Amazon");
@@ -52,7 +53,7 @@ async fn search_tv_fetches_episode_detail() {
 
     let source = TmdbSource::new_with_base_url("dummy_key", &server.uri());
     let results = source
-        .search_tv("BBC Television Shakespeare", Some(4), Some(3))
+        .search_tv("BBC Television Shakespeare", Some(4), Some(3), None)
         .await
         .unwrap();
 
@@ -79,6 +80,6 @@ async fn search_movie_empty_results() {
         .await;
 
     let source = TmdbSource::new_with_base_url("dummy_key", &server.uri());
-    let results = source.search_movie("xyznotarealfilm").await.unwrap();
+    let results = source.search_movie("xyznotarealfilm", None).await.unwrap();
     assert!(results.is_empty());
 }
