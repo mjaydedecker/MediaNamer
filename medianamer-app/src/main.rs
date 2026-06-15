@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use state::{AppState, Message, MatchState, MessageKind, SortDir, View};
 use medianamer_core::{
-    matcher::{fallback_queries, parse_filename, score, CONFIDENCE_THRESHOLD},
+    matcher::{fallback_queries, match_confidence, parse_filename, CONFIDENCE_THRESHOLD},
     mediainfo::MediaInfo,
     renamer::{execute_rename, RenameJob},
     sources::{
@@ -195,11 +195,32 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 let season = parsed.season;
                 let episode = parsed.episode;
                 let year = parsed.year;
+                let imdb_id = parsed.imdb_id.clone();
+                let tmdb_id = parsed.tmdb_id;
                 let mt = media_type.clone();
                 let src = source.clone();
 
                 tasks.push(Task::perform(
                     async move {
+                        // An embedded provider id (Plex/Sonarr/Radarr tag) is
+                        // authoritative — try an exact lookup first and only fall
+                        // back to title search if it yields nothing or errors.
+                        if imdb_id.is_some() || tmdb_id.is_some() {
+                            let lookup = match &mt {
+                                MediaType::Movie => {
+                                    src.lookup_movie(imdb_id.as_deref(), tmdb_id).await
+                                }
+                                MediaType::Tv => {
+                                    src.lookup_tv(imdb_id.as_deref(), tmdb_id, season, episode).await
+                                }
+                            };
+                            if let Ok(matches) = lookup {
+                                if !matches.is_empty() {
+                                    return Ok(matches);
+                                }
+                            }
+                        }
+
                         let queries = fallback_queries(&query);
                         for q in &queries {
                             let result = match &mt {
@@ -233,9 +254,19 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                             .file_stem()
                             .and_then(|s| s.to_str())
                             .unwrap_or("");
-                        let query = parse_filename(filename).title_query;
+                        let parsed = parse_filename(filename);
+                        let query = parsed.title_query;
+                        let year = parsed.year;
+                        // Score every candidate (title similarity with the filename
+                        // year as a tiebreaker) rather than trusting the provider's
+                        // own ordering, then rank best-first.
+                        matches.sort_by(|a, b| {
+                            let ca = match_confidence(&query, year, a.display_title(), a.year());
+                            let cb = match_confidence(&query, year, b.display_title(), b.year());
+                            cb.partial_cmp(&ca).unwrap_or(std::cmp::Ordering::Equal)
+                        });
                         let top = matches.remove(0);
-                        let confidence = score(&query, top.display_title());
+                        let confidence = match_confidence(&query, year, top.display_title(), top.year());
                         if confidence >= CONFIDENCE_THRESHOLD {
                             MatchState::Matched(top)
                         } else {

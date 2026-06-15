@@ -51,6 +51,20 @@ struct EpisodeResponse {
     response: String,
 }
 
+/// OMDB detail response for an `i=` (imdb id) lookup — a single object rather
+/// than a `Search` list.
+#[derive(Deserialize)]
+struct DetailResponse {
+    #[serde(rename = "Title")]
+    title: Option<String>,
+    #[serde(rename = "Year")]
+    year: Option<String>,
+    #[serde(rename = "imdbID")]
+    imdb_id: Option<String>,
+    #[serde(rename = "Response")]
+    response: String,
+}
+
 fn imdb_to_id(imdb_id: &str) -> u64 {
     imdb_id.trim_start_matches("tt").parse().unwrap_or(0)
 }
@@ -137,5 +151,79 @@ impl MediaSource for OmdbSource {
                 season: None, episode: None, episode_title: None,
             },
         }).collect())
+    }
+
+    // OMDB only supports IMDb ids (no TMDB lookup); tmdb_id is ignored.
+    async fn lookup_movie(&self, imdb_id: Option<&str>, _tmdb_id: Option<u64>) -> Result<Vec<MediaMatch>> {
+        let Some(imdb) = imdb_id else { return Ok(vec![]); };
+        let d: DetailResponse = self.client
+            .get(&self.base_url)
+            .query(&[("apikey", self.api_key.clone()), ("i", imdb.to_string())])
+            .send().await?
+            .error_for_status().map_err(|e| Error::Tmdb(e.to_string()))?
+            .json().await?;
+
+        if d.response != "True" { return Ok(vec![]); }
+        let imdb_ret = d.imdb_id.unwrap_or_else(|| imdb.to_string());
+        Ok(vec![MediaMatch {
+            tmdb_id: imdb_to_id(&imdb_ret),
+            kind: MatchKind::Movie {
+                title: d.title.unwrap_or_default(),
+                year: year_from_str(&d.year),
+            },
+        }])
+    }
+
+    async fn lookup_tv(
+        &self,
+        imdb_id: Option<&str>,
+        _tmdb_id: Option<u64>,
+        season: Option<u32>,
+        episode: Option<u32>,
+    ) -> Result<Vec<MediaMatch>> {
+        let Some(imdb) = imdb_id else { return Ok(vec![]); };
+        let d: DetailResponse = self.client
+            .get(&self.base_url)
+            .query(&[("apikey", self.api_key.clone()), ("i", imdb.to_string())])
+            .send().await?
+            .error_for_status().map_err(|e| Error::Tmdb(e.to_string()))?
+            .json().await?;
+
+        if d.response != "True" { return Ok(vec![]); }
+        let series_title = d.title.unwrap_or_default();
+        let series_imdb = d.imdb_id.unwrap_or_else(|| imdb.to_string());
+
+        if let (Some(s), Some(e)) = (season, episode) {
+            let ep: EpisodeResponse = self.client
+                .get(&self.base_url)
+                .query(&[
+                    ("apikey", self.api_key.clone()),
+                    ("i", imdb.to_string()),
+                    ("Season", s.to_string()),
+                    ("Episode", e.to_string()),
+                ])
+                .send().await?
+                .error_for_status().map_err(|e| Error::Tmdb(e.to_string()))?
+                .json().await?;
+
+            if ep.response != "True" { return Ok(vec![]); }
+            return Ok(vec![MediaMatch {
+                tmdb_id: imdb_to_id(&series_imdb),
+                kind: MatchKind::TvEpisode {
+                    series_title,
+                    season: ep.season.as_deref().and_then(|s| s.parse().ok()),
+                    episode: ep.episode.as_deref().and_then(|e| e.parse().ok()),
+                    episode_title: ep.title,
+                },
+            }]);
+        }
+
+        Ok(vec![MediaMatch {
+            tmdb_id: imdb_to_id(&series_imdb),
+            kind: MatchKind::TvEpisode {
+                series_title,
+                season: None, episode: None, episode_title: None,
+            },
+        }])
     }
 }

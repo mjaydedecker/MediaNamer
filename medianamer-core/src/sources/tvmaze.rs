@@ -74,4 +74,50 @@ impl MediaSource for TvmazeSource {
             },
         }).collect())
     }
+
+    // TVmaze's /lookup/shows accepts an IMDb id directly (no TMDB support).
+    async fn lookup_tv(
+        &self,
+        imdb_id: Option<&str>,
+        _tmdb_id: Option<u64>,
+        season: Option<u32>,
+        episode: Option<u32>,
+    ) -> Result<Vec<MediaMatch>> {
+        let Some(imdb) = imdb_id else { return Ok(vec![]); };
+        let url = format!("{}/lookup/shows", self.base_url);
+        let resp = self.client
+            .get(&url)
+            .query(&[("imdb", imdb)])
+            .send().await?;
+        // 404 == no show with that id; fall back to title search.
+        if !resp.status().is_success() { return Ok(vec![]); }
+        let show: ShowInfo = resp.json().await?;
+
+        if let (Some(s), Some(e)) = (season, episode) {
+            let ep_url = format!("{}/shows/{}/episodebynumber", self.base_url, show.id);
+            let ep: EpisodeInfo = self.client
+                .get(&ep_url)
+                .query(&[("season", s), ("number", e)])
+                .send().await?
+                .error_for_status().map_err(|e| Error::Tmdb(e.to_string()))?
+                .json().await?;
+            return Ok(vec![MediaMatch {
+                tmdb_id: show.id,
+                kind: MatchKind::TvEpisode {
+                    series_title: show.name,
+                    season: Some(ep.season),
+                    episode: Some(ep.number),
+                    episode_title: Some(ep.name),
+                },
+            }]);
+        }
+
+        Ok(vec![MediaMatch {
+            tmdb_id: show.id,
+            kind: MatchKind::TvEpisode {
+                series_title: show.name,
+                season: None, episode: None, episode_title: None,
+            },
+        }])
+    }
 }

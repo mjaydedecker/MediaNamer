@@ -87,6 +87,29 @@ pub trait MediaSource: Send + Sync {
         episode: Option<u32>,
         year: Option<u32>,
     ) -> Result<Vec<MediaMatch>>;
+
+    /// Exact movie lookup by an embedded provider id (IMDb or TMDB).
+    /// Providers that support it return the single authoritative match;
+    /// the default returns nothing so callers fall back to title search.
+    async fn lookup_movie(
+        &self,
+        _imdb_id: Option<&str>,
+        _tmdb_id: Option<u64>,
+    ) -> Result<Vec<MediaMatch>> {
+        Ok(vec![])
+    }
+
+    /// Exact TV lookup by an embedded provider id, resolving the given
+    /// season/episode when supplied. Default returns nothing (title fallback).
+    async fn lookup_tv(
+        &self,
+        _imdb_id: Option<&str>,
+        _tmdb_id: Option<u64>,
+        _season: Option<u32>,
+        _episode: Option<u32>,
+    ) -> Result<Vec<MediaMatch>> {
+        Ok(vec![])
+    }
 }
 
 pub mod tmdb;
