@@ -87,7 +87,7 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
                 })
                 .padding([6, 10])
                 .align_y(iced::alignment::Vertical::Center),
-                Space::with_width(10),
+                Space::new().width(10),
                 text(*ex).size(12).color(t2),
             ]
             .align_y(iced::Alignment::Center)

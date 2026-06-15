@@ -21,7 +21,7 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
             // Header
             row![
                 text("Settings").size(15).color(t),
-                Space::with_width(Length::Fill),
+                Space::new().width(Length::Fill),
                 close_btn,
             ]
             .align_y(iced::Alignment::Center),
@@ -51,7 +51,7 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
 
             // Footer buttons
             row![
-                Space::with_width(Length::Fill),
+                Space::new().width(Length::Fill),
                 button(text("Cancel").size(13).color(t))
                     .style(move |_, _| button::Style {
                         background: Some(Background::Color(s)),

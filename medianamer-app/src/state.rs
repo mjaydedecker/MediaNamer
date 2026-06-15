@@ -152,6 +152,7 @@ pub enum Message {
     OpenHelp,
     CloseHelp,
     RefreshSystemTheme,
+    SystemThemeDetected(bool),
     RemoveFile(usize),
     ClearAll,
     SortBy(SortCol),

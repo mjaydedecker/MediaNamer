@@ -48,7 +48,7 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
         ghost_btn("⌕ Match All", Message::MatchAll,       !has_files,  &pal),
         ghost_btn("✕ Clear All", Message::ClearAll,       !has_files,  &pal),
         primary_btn("✎ Rename",  Message::Rename,         !can_rename, &pal),
-        Space::with_width(Length::Fill),
+        Space::new().width(Length::Fill),
         text("Type").size(12).color(pal.text2),
         pick_list(media_types, Some(&state.media_type), Message::MediaTypeChanged),
         text("Provider").size(12).color(pal.text2),
@@ -116,7 +116,7 @@ fn icon_btn<'a>(icon: &str, msg: Message, pal: &Palette) -> Element<'a, Message>
 
 fn vdivider<'a>(pal: &Palette) -> Element<'a, Message> {
     let b = pal.border;
-    container(Space::new(1.0, 24.0))
+    container(Space::new().width(1.0).height(24.0))
         .style(move |_| container::Style {
             background: Some(Background::Color(b)),
             ..Default::default()
